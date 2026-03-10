@@ -10,6 +10,17 @@ const formatTL = (n) => new Intl.NumberFormat("tr-TR",{style:"currency",currency
 const uid   = () => Math.random().toString(36).substr(2,9);
 const zaman = () => new Date().toLocaleString("tr-TR");
 const getBos = (h) => h.maxHisse - h.hisseler.filter(x=>x.durum==="onaylı").length;
+const IMGBB_KEY = "764ae37046cfd464d0ef1d746d933a22";
+
+/* ════ IMGBB YÜKLEME ════ */
+async function imgbbYukle(dosya) {
+  const form = new FormData();
+  form.append("image", dosya);
+  const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {method:"POST", body:form});
+  const d = await r.json();
+  if (d.success) return d.data.url;
+  throw new Error("ImgBB yükleme başarısız");
+}
 
 /* ════ SUPABASE ════ */
 async function sbOku(key) {
@@ -106,6 +117,24 @@ const CSS = `
 
   /* Güncelleme formu */
   .gform{display:flex;flex-direction:column;gap:10px;padding:14px;background:rgba(212,160,23,.05);border-radius:10px;margin-top:12px;border:1px solid rgba(212,160,23,.15);}
+
+  /* Fotoğraf yükleme alanı */
+  .foto-yukle-alani{border:2px dashed rgba(212,160,23,.4);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;overflow:hidden;}
+  .foto-yukle-alani:hover,.foto-yukle-alani:active{border-color:#d4a017;background:rgba(212,160,23,.08);}
+  .foto-yukle-alani input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:100px;}
+
+  /* Mobil iyileştirmeler */
+  @media(max-width:480px){
+    .hgrid{grid-template-columns:1fr;}
+    .sgrid{gap:6px;}
+    .abtn-grp{gap:4px;}
+    .abtn-grp button{padding:5px 8px !important;font-size:11px !important;}
+    .modal-kart{max-height:98vh;}
+    .talep-kart{padding:14px;}
+  }
+  @media(max-width:360px){
+    .sgrid{grid-template-columns:repeat(3,1fr);}
+  }
 `;
 
 /* ════ STİLLER ════ */
@@ -118,6 +147,68 @@ const S = {
   inp:  {width:"100%",padding:"11px 12px",background:"rgba(255,255,255,.06)",border:"1px solid rgba(212,160,23,.28)",borderRadius:8,color:"#e8d5a3",fontFamily:FONT,fontSize:16,boxSizing:"border-box"},
   sel:  {width:"100%",padding:"11px 12px",background:"#120d04",border:"1px solid rgba(212,160,23,.28)",borderRadius:8,color:"#e8d5a3",fontFamily:FONT,fontSize:16},
 };
+
+/* ════ FOTO YÜKLEME BİLEŞENİ ════ */
+function FotoYukle({mevcut, onChange}) {
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [onizleme,   setOnizleme]   = useState(mevcut||"");
+  const [hata,       setHata]       = useState("");
+
+  const dosyaSec = async (e) => {
+    const dosya = e.target.files[0];
+    if (!dosya) return;
+    // Önizleme göster
+    const reader = new FileReader();
+    reader.onload = ev => setOnizleme(ev.target.result);
+    reader.readAsDataURL(dosya);
+    // ImgBB'ye yükle
+    setYukleniyor(true);
+    setHata("");
+    try {
+      const url = await imgbbYukle(dosya);
+      setOnizleme(url);
+      onChange(url);
+    } catch(e) {
+      setHata("Yükleme başarısız. Tekrar deneyin.");
+      setOnizleme(mevcut||"");
+    } finally {
+      setYukleniyor(false);
+    }
+  };
+
+  return (
+    <div>
+      <label style={{fontSize:12,color:"#a08060",display:"block",marginBottom:6}}>📷 Fotoğraf</label>
+      <div className="foto-yukle-alani" style={{background:onizleme?"#0a0602":"transparent"}}>
+        <input type="file" accept="image/*" capture="environment" onChange={dosyaSec} disabled={yukleniyor}/>
+        {onizleme && !yukleniyor
+          ? <img src={onizleme} alt="" style={{width:"100%",maxHeight:180,objectFit:"cover",borderRadius:8,display:"block"}}
+              onError={()=>setOnizleme("")}/>
+          : <div style={{pointerEvents:"none"}}>
+              {yukleniyor
+                ? <div>
+                    <div style={{fontSize:28,marginBottom:6}}>⏳</div>
+                    <div style={{fontSize:13,color:"#d4a017"}}>Yükleniyor...</div>
+                  </div>
+                : <div>
+                    <div style={{fontSize:32,marginBottom:6}}>📷</div>
+                    <div style={{fontSize:13,color:"#d4a017",fontWeight:600}}>Fotoğraf Çek / Seç</div>
+                    <div style={{fontSize:11,color:"#806040",marginTop:3}}>Dokunun — kamera veya galeri</div>
+                  </div>
+              }
+            </div>
+        }
+      </div>
+      {onizleme&&!yukleniyor&&(
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:5}}>
+          <span style={{fontSize:10,color:"#4ade80"}}>✓ Fotoğraf yüklendi</span>
+          <button onClick={()=>{setOnizleme("");onChange("");}} style={{background:"none",border:"none",color:"#f87171",fontSize:11,cursor:"pointer",fontFamily:FONT,padding:"2px 6px"}}>✕ Kaldır</button>
+        </div>
+      )}
+      {hata&&<p style={{margin:"4px 0 0",fontSize:11,color:"#f87171"}}>{hata}</p>}
+    </div>
+  );
+}
 
 /* ════ KAYAN BANT ════ */
 function KayanBant() {
@@ -696,7 +787,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                             <div><label style={S.lbl}>Fiyat (TL)</label><input value={duzForm.fiyat} onChange={e=>setDuzForm(p=>({...p,fiyat:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>
                             {h.tip==="buyukbas"&&<div><label style={S.lbl}>Max Hisse</label><input value={duzForm.maxHisse} onChange={e=>setDuzForm(p=>({...p,maxHisse:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>}
                           </div>
-                          <div><label style={S.lbl}>📷 Foto URL</label><input value={duzForm.foto} onChange={e=>setDuzForm(p=>({...p,foto:e.target.value}))} placeholder="https://i.ibb.co/..." style={S.inp}/></div>
+                          <FotoYukle mevcut={duzForm.foto} onChange={url=>setDuzForm(p=>({...p,foto:url}))}/>
                           <div><label style={S.lbl}>📝 Açıklama</label><textarea value={duzForm.aciklama} onChange={e=>setDuzForm(p=>({...p,aciklama:e.target.value}))} rows={2} style={{...S.inp,resize:"vertical"}}/></div>
                           <div style={{display:"flex",gap:8}}>
                             <button onClick={()=>setDuzEdit(null)} style={{flex:1,...S.btn("#604030"),color:"#a08060"}}>İptal</button>
@@ -769,12 +860,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                   <input value={yeniH.maxHisse} onChange={e=>{const v=Math.min(7,Math.max(1,+e.target.value.replace(/\D/g,"")||1));setYeniH(p=>({...p,maxHisse:String(v)}));}} inputMode="numeric" style={S.inp}/>
                 </div>
               )}
-              <div>
-                <label style={S.lbl}>📷 Fotoğraf URL (ImgBB Direct Link)</label>
-                <input value={yeniH.foto} onChange={e=>setYeniH(p=>({...p,foto:e.target.value}))} placeholder="https://i.ibb.co/..." style={S.inp}/>
-                <p style={{margin:"3px 0 0",fontSize:10,color:"#604030"}}>imgbb.com → yükle → <strong style={{color:"#d4a017"}}>Direct Link</strong> ⚠️ JPG/PNG</p>
-                {yeniH.foto&&<img src={yeniH.foto} alt="" style={{marginTop:6,height:60,borderRadius:6,objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
-              </div>
+              <FotoYukle mevcut={yeniH.foto} onChange={url=>setYeniH(p=>({...p,foto:url}))}/>
               <div>
                 <label style={S.lbl}>📝 Açıklama (opsiyonel)</label>
                 <textarea value={yeniH.aciklama} onChange={e=>setYeniH(p=>({...p,aciklama:e.target.value}))} placeholder="Örn: Sağlıklı, 3 yaşında..." rows={2} style={{...S.inp,resize:"vertical"}}/>

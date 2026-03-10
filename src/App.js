@@ -6,7 +6,7 @@ const SB_URL = "https://pbevwbsvhivrfdgvqexc.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZXZ3YnN2aGl2cmZkZ3ZxZXhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTU0NDgsImV4cCI6MjA4ODczMTQ0OH0.Yudg5A8hSHWT8b-TF2Ezsnc_QMGPU2ljKQ0JaacT7o8";
 const SB_HDR = { "Content-Type":"application/json", "apikey":SB_KEY, "Authorization":`Bearer ${SB_KEY}` };
 
-const formatTL = (n) => new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(n);
+const formatTL = (n) => new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
 const uid   = () => Math.random().toString(36).substr(2,9);
 const zaman = () => new Date().toLocaleString("tr-TR");
 const getBos = (h) => h.maxHisse - h.hisseler.filter(x=>x.durum==="onaylı").length;
@@ -117,6 +117,25 @@ const CSS = `
 
   /* Güncelleme formu */
   .gform{display:flex;flex-direction:column;gap:10px;padding:14px;background:rgba(212,160,23,.05);border-radius:10px;margin-top:12px;border:1px solid rgba(212,160,23,.15);}
+
+  /* Admin genel mobil */
+  .admin-icerik{max-width:860px;margin:0 auto;padding:12px 10px;}
+  @media(max-width:600px){
+    .admin-icerik{padding:10px 8px;}
+    /* Sekme butonları küçük ekranda daha küçük */
+    .sbtn{padding:10px 11px !important;font-size:12px !important;}
+    /* Hayvan kart buton grubu alt satıra geçsin */
+    .abtn-grp{width:100%;justify-content:flex-end;margin-top:6px;}
+    /* Güncelleme grid tek sütun */
+    .gform .dgrid2{grid-template-columns:1fr !important;}
+    /* Talepler kart */
+    .talep-onay-row{flex-direction:column;}
+    .talep-onay-row button{width:100%;}
+  }
+  @media(max-width:400px){
+    .sbtn{padding:9px 9px !important;font-size:11px !important;}
+    .abtn-grp button{font-size:10px !important;padding:4px 7px !important;}
+  }
 
   /* Fotoğraf yükleme alanı */
   .foto-yukle-alani{border:2px dashed rgba(212,160,23,.4);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;overflow:hidden;}
@@ -634,12 +653,13 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
   };
 
   const excelIndir = (tur)=>{
+    const tl = (n) => new Intl.NumberFormat("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+" TL";
     const satirlar=[];
     if(tur==="hisseler"){
       satirlar.push(["Kesim Sırası","Hayvan No","Tür","Hissedar Adı","Telefon","Hisse Tutarı","Tarih"]);
       [...hayvanlar].sort((a,b)=>a.kesimSirasi-b.kesimSirasi).forEach(h=>{
         h.hisseler.filter(x=>x.durum==="onaylı").forEach(hisse=>{
-          satirlar.push([h.kesimSirasi,`#${h.numara}`,h.tip==="buyukbas"?"Büyükbaş":`Küçükbaş (${h.kategori})`,hisse.ad,hisse.telefon,hisse.tutar,hisse.tarih]);
+          satirlar.push([h.kesimSirasi,`#${h.numara}`,h.tip==="buyukbas"?"Büyükbaş":`Küçükbaş (${h.kategori})`,hisse.ad,hisse.telefon,tl(hisse.tutar),hisse.tarih]);
         });
       });
     } else if(tur==="hayvanlar"){
@@ -647,19 +667,32 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
       [...hayvanlar].sort((a,b)=>a.kesimSirasi-b.kesimSirasi).forEach(h=>{
         const dolu=h.hisseler.filter(x=>x.durum==="onaylı").length;
         const hT=h.tip==="buyukbas"?Math.round(h.fiyat/h.maxHisse):h.fiyat;
-        satirlar.push([h.kesimSirasi,`#${h.numara}`,h.tip==="buyukbas"?"Büyükbaş":`Küçükbaş (${h.kategori})`,h.fiyat,hT,h.maxHisse,dolu,h.maxHisse-dolu,h.durum]);
+        satirlar.push([h.kesimSirasi,`#${h.numara}`,h.tip==="buyukbas"?"Büyükbaş":`Küçükbaş (${h.kategori})`,tl(h.fiyat),tl(hT),h.maxHisse,dolu,h.maxHisse-dolu,h.durum]);
       });
     } else {
       satirlar.push(["Hayvan No","Ad","Telefon","Tutar","Durum","Tarih"]);
       talepler.forEach(t=>{
         const h=hayvanlar.find(x=>x.id===t.hayvanId);
-        satirlar.push([`#${h?.numara||"?"}`,t.ad,t.telefon,t.tutar,t.durum,t.tarih]);
+        satirlar.push([`#${h?.numara||"?"}`,t.ad,t.telefon,tl(t.tutar),t.durum,t.tarih]);
       });
     }
-    const csv="\uFEFF"+satirlar.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\n");
+    // Gerçek Excel XML formatı (.xls — Excel'de direkt açılır)
+    const esc = (v) => String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const satirXml = satirlar.map((r,i)=>
+      `<Row>${r.map(v=>`<Cell${i===0?' ss:StyleID="h"':""}><Data ss:Type="String">${esc(v)}</Data></Cell>`).join("")}</Row>`
+    ).join("");
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Styles>
+    <Style ss:ID="h"><Font ss:Bold="1"/><Interior ss:Color="#8B1A1A" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style>
+  </Styles>
+  <Worksheet ss:Name="Kurban2026"><Table>${satirXml}</Table></Worksheet>
+</Workbook>`;
     const a=document.createElement("a");
-    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
-    a.download=`kurban_${tur}_${new Date().toLocaleDateString("tr-TR").replace(/\./g,"-")}.csv`;
+    a.href=URL.createObjectURL(new Blob([xml],{type:"application/vnd.ms-excel;charset=utf-8"}));
+    a.download=`kurban_${tur}_${new Date().toLocaleDateString("tr-TR").replace(/\./g,"-")}.xls`;
     a.click();
   };
 
@@ -685,7 +718,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
         ))}
       </div>
 
-      <div style={{maxWidth:860,margin:"0 auto",padding:"14px 10px"}}>
+      <div className="admin-icerik">
 
         {/* ── TALEPLER ── */}
         {sekme==="talepler"&&(
@@ -708,7 +741,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                         <span style={{color:"#d4a017"}}>💰 {formatTL(t.tutar)}</span>
                       </div>
                     </div>
-                    <div style={{display:"flex",gap:8}}>
+                    <div className="talep-onay-row" style={{display:"flex",gap:8}}>
                       <button onClick={()=>onOnayla(t.id)} style={{flex:1,padding:"10px",background:"#14532d",border:"1px solid #4ade80",borderRadius:8,color:"#4ade80",cursor:"pointer",fontFamily:FONT,fontSize:13,fontWeight:600,touchAction:"manipulation"}}>✓ Onayla</button>
                       <button onClick={()=>onReddet(t.id)} style={{flex:1,padding:"10px",background:"#7f1d1d",border:"1px solid #f87171",borderRadius:8,color:"#f87171",cursor:"pointer",fontFamily:FONT,fontSize:13,fontWeight:600,touchAction:"manipulation"}}>✗ Reddet</button>
                     </div>
@@ -781,7 +814,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       {isDuz&&(
                         <div className="gform">
                           <p style={{margin:"0 0 8px",fontSize:12,color:"#60a5fa",fontWeight:700}}>✏️ Hayvan Güncelle</p>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                          <div className="dgrid2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                             <div><label style={S.lbl}>Hayvan No</label><input value={duzForm.numara} onChange={e=>setDuzForm(p=>({...p,numara:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>
                             <div><label style={S.lbl}>Kesim Sırası</label><input value={duzForm.kesimSirasi} onChange={e=>setDuzForm(p=>({...p,kesimSirasi:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>
                             <div><label style={S.lbl}>Fiyat (TL)</label><input value={duzForm.fiyat} onChange={e=>setDuzForm(p=>({...p,fiyat:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>

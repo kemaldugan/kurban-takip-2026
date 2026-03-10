@@ -678,23 +678,13 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
         satirlar.push([`#${h?.numara||"?"}`,t.ad,t.telefon,tl(t.tutar),t.durum,t.tarih]);
       });
     }
-    // Gerçek Excel XML formatı (.xls — Excel'de direkt açılır)
-    const esc = (v) => String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-    const satirXml = satirlar.map((r,i)=>
-      `<Row>${r.map(v=>`<Cell${i===0?' ss:StyleID="h"':""}><Data ss:Type="String">${esc(v)}</Data></Cell>`).join("")}</Row>`
-    ).join("");
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-  <Styles>
-    <Style ss:ID="h"><Font ss:Bold="1"/><Interior ss:Color="#8B1A1A" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style>
-  </Styles>
-  <Worksheet ss:Name="Kurban2026"><Table>${satirXml}</Table></Worksheet>
-</Workbook>`;
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(new Blob([xml],{type:"application/vnd.ms-excel;charset=utf-8"}));
-    a.download=`kurban_${tur}_${new Date().toLocaleDateString("tr-TR").replace(/\./g,"-")}.xls`;
+    // UTF-8 BOM'lu CSV — Excel uyarısız açar, Türkçe karakter sorunsuz
+    const csv = "\uFEFF" + satirlar.map(r =>
+      r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(";")
+    ).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    a.download = `kurban_${tur}_${new Date().toLocaleDateString("tr-TR").replace(/\./g,"-")}.csv`;
     a.click();
   };
 

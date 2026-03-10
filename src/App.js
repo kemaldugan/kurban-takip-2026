@@ -621,6 +621,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
 
   const bekleyen = talepler.filter(t=>t.durum==="bekliyor");
   const numSet = (key,val)=>setYeniH(p=>({...p,[key]:val.replace(/\D/g,"")}));
+  // Ham sayıyı noktalı göster: 350000 → 350.000
+  const fiyatGoster = (val) => val ? Number(val).toLocaleString("tr-TR") : "";
 
   const ekleHayvan = ()=>{
     if(!yeniH.numara||!yeniH.kesimSirasi||!yeniH.fiyat){alert("Hayvan No, Kesim Sırası ve Fiyat zorunludur!");return;}
@@ -817,7 +819,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                           <div className="dgrid2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                             <div><label style={S.lbl}>Hayvan No</label><input value={duzForm.numara} onChange={e=>setDuzForm(p=>({...p,numara:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>
                             <div><label style={S.lbl}>Kesim Sırası</label><input value={duzForm.kesimSirasi} onChange={e=>setDuzForm(p=>({...p,kesimSirasi:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>
-                            <div><label style={S.lbl}>Fiyat (TL)</label><input value={duzForm.fiyat} onChange={e=>setDuzForm(p=>({...p,fiyat:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>
+                            <div><label style={S.lbl}>Fiyat (TL)</label><input value={fiyatGoster(duzForm.fiyat)} onChange={e=>setDuzForm(p=>({...p,fiyat:e.target.value.replace(/\./g,"").replace(/\D/g,"")}))} inputMode="numeric" placeholder="350.000" style={S.inp}/></div>
                             {h.tip==="buyukbas"&&<div><label style={S.lbl}>Max Hisse</label><input value={duzForm.maxHisse} onChange={e=>setDuzForm(p=>({...p,maxHisse:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>}
                           </div>
                           <FotoYukle mevcut={duzForm.foto} onChange={url=>setDuzForm(p=>({...p,foto:url}))}/>
@@ -885,8 +887,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
               <div><label style={S.lbl}>Kesim Sırası</label><input value={yeniH.kesimSirasi} onChange={e=>numSet("kesimSirasi",e.target.value)} placeholder="Örn: 3" inputMode="numeric" style={S.inp}/></div>
               <div>
                 <label style={S.lbl}>Toplam Fiyat (TL)</label>
-                <input value={yeniH.fiyat} onChange={e=>numSet("fiyat",e.target.value)} placeholder="350000" inputMode="numeric" style={S.inp}/>
-                <p style={{margin:"3px 0 0",fontSize:10,color:"#604030"}}>Nokta/virgül olmadan: 350000</p>
+                <input value={fiyatGoster(yeniH.fiyat)} onChange={e=>numSet("fiyat",e.target.value.replace(/\./g,""))} placeholder="350.000" inputMode="numeric" style={S.inp}/>
+                <p style={{margin:"3px 0 0",fontSize:10,color:"#604030"}}>Sadece rakam girin, nokta otomatik eklenir</p>
               </div>
               {yeniH.tip==="buyukbas"&&(
                 <div><label style={S.lbl}>Maks Hisse (1–7)</label>

@@ -21,11 +21,22 @@ async function sbOku(key) {
   } catch { return null; }
 }
 async function sbYaz(key, value) {
-  await fetch(`${SB_URL}/rest/v1/kurban_data`,{
-    method:"POST",
-    headers:{...SB_HDR,"Prefer":"resolution=merge-duplicates"},
-    body:JSON.stringify({key, value:JSON.stringify(value)})
+  const strVal = JSON.stringify(value);
+  // Önce PATCH (güncelle), sonra POST (ekle) — upsert stratejisi
+  const r = await fetch(`${SB_URL}/rest/v1/kurban_data?key=eq.${key}`,{
+    method:"PATCH",
+    headers:{...SB_HDR,"Prefer":"return=representation","Content-Type":"application/json"},
+    body:JSON.stringify({value: strVal})
   });
+  const updated = await r.json();
+  if(!Array.isArray(updated)||updated.length===0){
+    // Kayıt yok, INSERT yap
+    await fetch(`${SB_URL}/rest/v1/kurban_data`,{
+      method:"POST",
+      headers:{...SB_HDR,"Prefer":"return=minimal","Content-Type":"application/json"},
+      body:JSON.stringify({key, value: strVal})
+    });
+  }
 }
 
 /* ════ FONTS ════ */
@@ -201,7 +212,12 @@ export default function App() {
     const yeniListe=[...tRef.current,yeniTalep];
     setTalepler(yeniListe);
     /* Anlık Supabase yazma — debounce'suz */
-    try { await sbYaz("talepler",yeniListe); } catch{}
+    try {
+      await sbYaz("talepler",yeniListe);
+    } catch(e){
+      console.error("Talep Supabase yazma hatası:", e);
+      // Yine de state güncellendi, debounce ile tekrar denenecek
+    }
     return true;
   };
 

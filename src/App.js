@@ -301,14 +301,33 @@ export default function App() {
   const silHisse  = (hid,xid) => setHayvanlar(p=>p.map(h=>h.id===hid?{...h,hisseler:h.hisseler.filter(x=>x.id!==xid)}:h));
   const durumH    = (id,d)    => setHayvanlar(p=>p.map(x=>x.id===id?{...x,durum:d}:x));
 
-  const hisseDirekt = (hayvanId,ad,telefon)=>{
+  const hisseDirekt = (hayvanId, bilgi)=>{
     const h=hRef.current.find(x=>x.id===hayvanId);
     if(!h) return false;
     const bos=h.maxHisse-h.hisseler.filter(x=>x.durum==="onaylı").length;
     if(bos<=0){alert("Bu hayvanda boş yer kalmadı!");return false;}
     const tutar=h.tip==="buyukbas"?Math.round(h.fiyat/h.maxHisse):h.fiyat;
-    setHayvanlar(p=>p.map(x=>x.id===hayvanId?{...x,hisseler:[...x.hisseler,{id:uid(),hayvanId,ad,telefon,tutar,durum:"onaylı",tarih:zaman()}]}:x));
+    const yeniHisse = {
+      id:uid(), hayvanId,
+      ad: bilgi.ad, telefon: bilgi.telefon,
+      tutar, odenen: 0,
+      vekalet: bilgi.vekalet||false,
+      teslimat: bilgi.teslimat||"belirtilmedi",
+      referans: bilgi.referans||"",
+      acilIrtibat: bilgi.acilIrtibat||"",
+      acilTelefon: bilgi.acilTelefon||"",
+      not: bilgi.not||"",
+      durum:"onaylı", tarih:zaman()
+    };
+    setHayvanlar(p=>p.map(x=>x.id===hayvanId?{...x,hisseler:[...x.hisseler,yeniHisse]}:x));
     return true;
+  };
+
+  const odemeGuncelle = (hayvanId, hisseId, odenen) => {
+    setHayvanlar(p=>p.map(h=>h.id===hayvanId
+      ? {...h, hisseler: h.hisseler.map(x=>x.id===hisseId ? {...x, odenen: +odenen} : x)}
+      : h
+    ));
   };
 
   /* Talep gönder — Supabase'e ANINDA yaz */
@@ -344,7 +363,7 @@ export default function App() {
       <style>{CSS}</style>
       {sbHata&&<div style={{background:"#7f1d1d",color:"#fca5a5",fontSize:11,textAlign:"center",padding:"5px",fontFamily:FONT}}>⚠️ Bağlantı sorunu — veriler geçici olarak çevrimdışı saklanıyor</div>}
       {view==="login" && <LoginPanel sifre={sifre} setSifre={setSifre} err={sifreErr} onGiris={giris} onGeri={()=>setView("public")}/>}
-      {view==="admin" && admin && <AdminPanel hayvanlar={hayvanlar} talepler={talepler} onOnayla={onayla} onReddet={reddet} onEkleH={ekleH} onGuncH={guncH} onSilH={silH} onSilHisse={silHisse} onDurum={durumH} onHisseDirekt={hisseDirekt} onCikis={()=>{setAdmin(false);setView("public");}} sbHata={sbHata}/>}
+      {view==="admin" && admin && <AdminPanel hayvanlar={hayvanlar} talepler={talepler} onOnayla={onayla} onReddet={reddet} onEkleH={ekleH} onGuncH={guncH} onSilH={silH} onSilHisse={silHisse} onDurum={durumH} onHisseDirekt={hisseDirekt} onOdeme={odemeGuncelle} onCikis={()=>{setAdmin(false);setView("public");}} sbHata={sbHata}/>}
       {(view==="public"||(view==="admin"&&!admin)) && <PublicPanel hayvanlar={hayvanlar} talepler={talepler} onTalep={talepGonder} onAdmin={()=>setView("login")}/>}
     </>
   );
@@ -610,7 +629,7 @@ function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
 /* ════════════════════════════════════════════
    ADMİN PANELİ
 ════════════════════════════════════════════ */
-function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH,onSilHisse,onDurum,onHisseDirekt,onCikis,sbHata}) {
+function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH,onSilHisse,onDurum,onHisseDirekt,onOdeme,onCikis,sbHata}) {
   const [sekme,   setSekme]   = useState("talepler");
   const [yeniH,   setYeniH]   = useState({tip:"buyukbas",kategori:"koyun",numara:"",kesimSirasi:"",fiyat:"",maxHisse:"7",foto:"",aciklama:""});
   const [acik,    setAcik]    = useState(null);
@@ -618,6 +637,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
   const [duzForm, setDuzForm] = useState({});   // güncelleme form değerleri
   const [fotoEdit,setFotoEdit]= useState({});
   const [hForm,   setHForm]   = useState({});
+  const BOŞ_HFORM = {ad:"",telefon:"",vekalet:false,teslimat:"belirtilmedi",referans:"",acilIrtibat:"",acilTelefon:"",not:""};
 
   const bekleyen = talepler.filter(t=>t.durum==="bekliyor");
   const numSet = (key,val)=>setYeniH(p=>({...p,[key]:val.replace(/\D/g,"")}));
@@ -634,8 +654,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
   const hisseDirekt = (hid)=>{
     const f=hForm[hid]||{};
     if(!f.ad?.trim()||!f.telefon?.trim()){alert("Ad ve telefon zorunludur!");return;}
-    if(onHisseDirekt(hid,f.ad.trim(),f.telefon.trim())){
-      setHForm(p=>({...p,[hid]:{ad:"",telefon:""}}));
+    if(onHisseDirekt(hid, f)){
+      setHForm(p=>({...p,[hid]:{ad:"",telefon:"",vekalet:false,teslimat:"belirtilmedi",referans:"",acilIrtibat:"",acilTelefon:"",not:""}}));
       alert("✅ Hissedar eklendi!");
     }
   };
@@ -658,10 +678,12 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
     const tl = (n) => new Intl.NumberFormat("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+" TL";
     const satirlar=[];
     if(tur==="hisseler"){
-      satirlar.push(["Kesim Sırası","Hayvan No","Tür","Hissedar Adı","Telefon","Hisse Tutarı","Tarih"]);
+      satirlar.push(["Kesim Sırası","Hayvan No","Tür","Hissedar Adı","Telefon","Hisse Tutarı","Ödenen","Kalan","Vekalet","Teslimat","Referans","Acil İrtibat","Acil Tel","Not","Tarih"]);
       [...hayvanlar].sort((a,b)=>a.kesimSirasi-b.kesimSirasi).forEach(h=>{
         h.hisseler.filter(x=>x.durum==="onaylı").forEach(hisse=>{
-          satirlar.push([h.kesimSirasi,`#${h.numara}`,h.tip==="buyukbas"?"Büyükbaş":`Küçükbaş (${h.kategori})`,hisse.ad,hisse.telefon,tl(hisse.tutar),hisse.tarih]);
+          const kalan=hisse.tutar-(hisse.odenen||0);
+          const teslimLabel={ev:"Eve Teslim",arac:"Araçla",ciftlik:"Çiftlikte",diger:"Diğer",belirtilmedi:"Belirtilmedi"};
+          satirlar.push([h.kesimSirasi,`#${h.numara}`,h.tip==="buyukbas"?"Büyükbaş":`Küçükbaş (${h.kategori})`,hisse.ad,hisse.telefon,tl(hisse.tutar),tl(hisse.odenen||0),tl(kalan),hisse.vekalet?"Alındı":"Alınmadı",teslimLabel[hisse.teslimat]||"Belirtilmedi",hisse.referans||"",hisse.acilIrtibat||"",hisse.acilTelefon||"",hisse.not||"",hisse.tarih]);
         });
       });
     } else if(tur==="hayvanlar"){
@@ -822,29 +844,105 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       )}
 
                       {/* HİSSEDAR EKLE */}
-                      <div style={{background:"rgba(212,160,23,.06)",border:"1px solid rgba(212,160,23,.2)",borderRadius:9,padding:"11px",marginBottom:12,marginTop:isDuz?12:0}}>
-                        <p style={{margin:"0 0 8px",fontSize:12,color:"#d4a017",fontWeight:700}}>➕ Hissedar Ekle <span style={{fontSize:10,fontWeight:400,color:"#806040"}}>({bos} boş yer)</span></p>
-                        <div className="hfrow">
-                          <div><label style={S.lbl}>Ad Soyad</label><input value={hf.ad} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,ad:e.target.value}}))} placeholder="Ahmet Yılmaz" style={S.inp}/></div>
-                          <div><label style={S.lbl}>Telefon</label><input value={hf.telefon} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,telefon:e.target.value}}))} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/></div>
+                      <div style={{background:"rgba(212,160,23,.06)",border:"1px solid rgba(212,160,23,.2)",borderRadius:9,padding:"12px",marginBottom:12,marginTop:isDuz?12:0}}>
+                        <p style={{margin:"0 0 10px",fontSize:12,color:"#d4a017",fontWeight:700}}>➕ Hissedar Ekle <span style={{fontSize:10,fontWeight:400,color:"#806040"}}>({bos} boş yer)</span></p>
+                        {/* Zorunlu alanlar */}
+                        <div className="hfrow" style={{marginBottom:8}}>
+                          <div><label style={S.lbl}>Ad Soyad *</label><input value={hf.ad||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,ad:e.target.value}}))} placeholder="Ahmet Yılmaz" style={S.inp}/></div>
+                          <div><label style={S.lbl}>Telefon *</label><input value={hf.telefon||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,telefon:e.target.value}}))} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/></div>
                         </div>
-                        <button onClick={()=>hisseDirekt(h.id)} style={{marginTop:9,width:"100%",padding:"10px",background:"#1a4a1a",border:"1px solid #4ade80",borderRadius:8,color:"#4ade80",cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:13,touchAction:"manipulation"}}>
+                        {/* Teslimat & Vekalet */}
+                        <div className="hfrow" style={{marginBottom:8}}>
+                          <div>
+                            <label style={S.lbl}>🚚 Teslimat Yeri</label>
+                            <select value={hf.teslimat||"belirtilmedi"} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,teslimat:e.target.value}}))} style={S.sel}>
+                              <option value="belirtilmedi">Belirtilmedi</option>
+                              <option value="ev">🏠 Eve Teslim</option>
+                              <option value="arac">🚐 Araçla Teslim</option>
+                              <option value="ciftlik">🐄 Çiftlikte Teslim</option>
+                              <option value="diger">📍 Diğer</option>
+                            </select>
+                          </div>
+                          <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+                            <label style={S.lbl}>📋 Vekalet</label>
+                            <button onClick={()=>setHForm(p=>({...p,[h.id]:{...hf,vekalet:!hf.vekalet}}))}
+                              style={{padding:"11px 12px",borderRadius:8,border:`1px solid ${hf.vekalet?"#4ade80":"rgba(212,160,23,.28)"}`,background:hf.vekalet?"rgba(74,222,128,.12)":"rgba(255,255,255,.06)",color:hf.vekalet?"#4ade80":"#806040",cursor:"pointer",fontFamily:FONT,fontSize:13,touchAction:"manipulation",textAlign:"left"}}>
+                              {hf.vekalet ? "✓ Alındı" : "✗ Alınmadı"}
+                            </button>
+                          </div>
+                        </div>
+                        {/* Referans & Acil İrtibat */}
+                        <div className="hfrow" style={{marginBottom:8}}>
+                          <div><label style={S.lbl}>👤 Referans Kişi</label><input value={hf.referans||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,referans:e.target.value}}))} placeholder="Öneren kişi" style={S.inp}/></div>
+                          <div><label style={S.lbl}>🆘 Acil İrtibat Adı</label><input value={hf.acilIrtibat||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilIrtibat:e.target.value}}))} placeholder="Eş / kardeş" style={S.inp}/></div>
+                        </div>
+                        <div style={{marginBottom:8}}>
+                          <label style={S.lbl}>📞 Acil İrtibat Telefonu</label>
+                          <input value={hf.acilTelefon||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilTelefon:e.target.value}}))} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/>
+                        </div>
+                        <div style={{marginBottom:10}}>
+                          <label style={S.lbl}>📝 Not</label>
+                          <input value={hf.not||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,not:e.target.value}}))} placeholder="Özel not..." style={S.inp}/>
+                        </div>
+                        <button onClick={()=>hisseDirekt(h.id)} style={{width:"100%",padding:"11px",background:"#1a4a1a",border:"1px solid #4ade80",borderRadius:8,color:"#4ade80",cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:13,touchAction:"manipulation"}}>
                           ✓ Hissedar Kaydet — {formatTL(hT)}
                         </button>
                       </div>
 
                       {/* HİSSE LİSTESİ */}
-                      <p style={{margin:"0 0 6px",fontSize:11,color:"#806040",fontWeight:700}}>Onaylı Hisseler ({dolu}/{h.maxHisse}):</p>
+                      <p style={{margin:"0 0 8px",fontSize:11,color:"#806040",fontWeight:700}}>Onaylı Hisseler ({dolu}/{h.maxHisse}):</p>
                       {h.hisseler.filter(x=>x.durum==="onaylı").length===0
                         ?<p style={{color:"#604030",fontSize:11}}>Henüz onaylı hisse yok.</p>
-                        :h.hisseler.filter(x=>x.durum==="onaylı").map((hisse,i)=>(
-                          <div key={hisse.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 9px",background:"rgba(255,255,255,.03)",borderRadius:6,marginBottom:3,fontSize:12}}>
-                            <span style={{flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                              <span style={{color:"#d4a017",fontWeight:700}}>{i+1}.</span> {hisse.ad} • {hisse.telefon} • <span style={{color:"#d4a017"}}>{formatTL(hisse.tutar)}</span>
-                            </span>
-                            <button onClick={()=>onSilHisse(h.id,hisse.id)} style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:17,padding:"0 4px",flexShrink:0,touchAction:"manipulation"}}>×</button>
+                        :h.hisseler.filter(x=>x.durum==="onaylı").map((hisse,i)=>{
+                          const kalan = hisse.tutar - (hisse.odenen||0);
+                          const teslimRenk = {ev:"#4ade80",arac:"#60a5fa",ciftlik:"#fb923c",diger:"#a78bfa",belirtilmedi:"#604030"};
+                          const teslimLabel = {ev:"🏠 Eve",arac:"🚐 Araçla",ciftlik:"🐄 Çiftlikte",diger:"📍 Diğer",belirtilmedi:"❓ Belirtilmedi"};
+                          return (
+                          <div key={hisse.id} style={{background:"rgba(255,255,255,.035)",border:"1px solid rgba(255,255,255,.07)",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
+                            {/* Üst satır: isim + sil */}
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                              <div>
+                                <span style={{color:"#d4a017",fontWeight:700,fontSize:13}}>{i+1}. {hisse.ad}</span>
+                                <span style={{fontSize:11,color:"#806040",marginLeft:8}}>📞 {hisse.telefon}</span>
+                              </div>
+                              <button onClick={()=>onSilHisse(h.id,hisse.id)} style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:16,padding:"0 2px",touchAction:"manipulation",flexShrink:0}}>🗑</button>
+                            </div>
+                            {/* Etiketler */}
+                            <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
+                              {hisse.teslimat&&hisse.teslimat!=="belirtilmedi"&&(
+                                <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.3)",color:teslimRenk[hisse.teslimat]||"#4ade80"}}>{teslimLabel[hisse.teslimat]||hisse.teslimat}</span>
+                              )}
+                              <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:hisse.vekalet?"rgba(74,222,128,.1)":"rgba(248,113,113,.08)",border:`1px solid ${hisse.vekalet?"rgba(74,222,128,.3)":"rgba(248,113,113,.2)"}`,color:hisse.vekalet?"#4ade80":"#f87171"}}>
+                                {hisse.vekalet?"📋 Vekalet ✓":"📋 Vekalet ✗"}
+                              </span>
+                              {hisse.referans&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(212,160,23,.08)",border:"1px solid rgba(212,160,23,.2)",color:"#d4a017"}}>👤 {hisse.referans}</span>}
+                            </div>
+                            {/* Acil irtibat */}
+                            {hisse.acilIrtibat&&(
+                              <div style={{fontSize:11,color:"#f87171",marginBottom:6,background:"rgba(248,113,113,.06)",padding:"4px 8px",borderRadius:6}}>
+                                🆘 {hisse.acilIrtibat}{hisse.acilTelefon&&` — ${hisse.acilTelefon}`}
+                              </div>
+                            )}
+                            {hisse.not&&<div style={{fontSize:11,color:"#a08060",marginBottom:8,fontStyle:"italic"}}>📝 {hisse.not}</div>}
+                            {/* Ödeme takibi */}
+                            <div style={{background:"rgba(0,0,0,.2)",borderRadius:8,padding:"8px 10px"}}>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6,flexWrap:"wrap",gap:4}}>
+                                <span style={{color:"#e8d5a3"}}>Toplam: <strong style={{color:"#d4a017"}}>{formatTL(hisse.tutar)}</strong></span>
+                                <span style={{color:"#4ade80"}}>Ödenen: <strong>{formatTL(hisse.odenen||0)}</strong></span>
+                                <span style={{color:kalan>0?"#f87171":"#4ade80"}}>Kalan: <strong>{formatTL(kalan)}</strong></span>
+                              </div>
+                              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                                <input
+                                  type="number" placeholder="Ödenen tutar" min="0" max={hisse.tutar}
+                                  defaultValue={hisse.odenen||0}
+                                  onBlur={e=>onOdeme(h.id,hisse.id,e.target.value)}
+                                  style={{flex:1,padding:"7px 10px",background:"rgba(255,255,255,.06)",border:"1px solid rgba(212,160,23,.25)",borderRadius:7,color:"#e8d5a3",fontFamily:FONT,fontSize:13}}
+                                />
+                                <span style={{fontSize:10,color:"#604030",whiteSpace:"nowrap"}}>TL gir → odaktan çık</span>
+                              </div>
+                            </div>
                           </div>
-                        ))
+                        );})
                       }
                     </div>
                   )}

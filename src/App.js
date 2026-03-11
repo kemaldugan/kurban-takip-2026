@@ -11,7 +11,7 @@ const uid   = () => Math.random().toString(36).substr(2,9);
 const zaman = () => new Date().toLocaleString("tr-TR");
 const getBos = (h) => h.maxHisse - h.hisseler.filter(x=>x.durum==="onaylı").length;
 
-const WA_YONETICI = "905552553456"; // <-- kendi numaranızla değiştirin
+const WA_YONETICI = "905321234567"; // <-- kendi numaranızla değiştirin
 const waGonder = (tel, mesaj) => {
   const temizTel = String(tel).replace(/\D/g,"").replace(/^0/,"90");
   window.open(`https://wa.me/${temizTel}?text=${encodeURIComponent(mesaj)}`,"_blank");

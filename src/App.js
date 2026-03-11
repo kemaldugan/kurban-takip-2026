@@ -31,20 +31,12 @@ async function sbYaz(key, value) {
 /* = FONTS = */
 const _fl = document.createElement("link");
 _fl.rel="stylesheet";
-_fl.href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap";
+_fl.href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&display=swap";
 document.head.appendChild(_fl);
 
-const FONT = "'Amiri','Scheherazade New',Georgia,serif";
+const FONT = "'Inter','Amiri',sans-serif";
 
-const KAYANYAZILAR = [
-  "Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim",
-  "Kurban, Allah'a yakınlaşmanın en güzel vesilesidir",
-  "Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim",
-  "Her kurban bir niyazdır, her niyet bir ibadettir",
-  "Murat Yalvaç Öğrenci Yurdu - Kurban Organizasyonu 2026",
-  "Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim  Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim",
-  "Kurbanınız kabul olsun - Hayırlı Bayramlar",
-];
+
 
 /* = GLOBAL CSS = */
 const CSS = `
@@ -52,9 +44,9 @@ const CSS = `
   html{scroll-behavior:smooth;}
   body{margin:0;background:#f5efe6;-webkit-tap-highlight-color:transparent;overflow-x:hidden;}
   input,select,textarea,button{font-family:${FONT};}
-  
-  @keyframes kayDir{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-  .kayan{display:inline-block;white-space:nowrap;animation:kayDir 42s linear infinite;color:#d4a017;font-family:${FONT};font-size:13px;letter-spacing:.8px;}
+  h1,h2,h3{font-family:${FONT};}
+  100%{transform:translateX(-50%)}}
+  ;font-size:13px;letter-spacing:.8px;}
   
   @media(hover:hover){.hkart:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(212,160,23,.2);}}
   .hkart{transition:transform .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;cursor:pointer;}
@@ -63,13 +55,10 @@ const CSS = `
   .hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
   @media(max-width:599px){.hgrid{grid-template-columns:1fr;gap:10px;}}
 
-  /* İstatistik: 3 sütun */
-  .sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
-
   /* Sekme bar */
   .sbar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid rgba(212,160,23,.2);scrollbar-width:none;}
   .sbar::-webkit-scrollbar{display:none;}
-  .sbtn{flex-shrink:0;padding:11px 15px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:${FONT};font-size:13px;white-space:nowrap;touch-action:manipulation;}
+  .sbtn{flex-shrink:0;padding:11px 15px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:${FONT};font-size:13px;white-space:nowrap;touch-action:manipulation;color:#4a2810;}
 
   /* Modallar */
   .modal-bg{position:fixed;inset:0;background:rgba(60,30,10,.75);display:flex;align-items:center;justify-content:center;z-index:200;padding:10px;}
@@ -129,20 +118,65 @@ function OdemeInput({tutar, odenen, onChange}) {
         }}
         style={{flex:1,minWidth:120,padding:"8px 11px",background:"#fff",border:"1px solid rgba(200,134,26,.4)",borderRadius:8,color:"#2d1a08",fontFamily:"inherit",fontSize:15,fontWeight:600}}
       />
-      <span style={{fontSize:10,color:"#9a6640",whiteSpace:"nowrap"}}>TL gir, odagi kaldir</span>
+      <span style={{fontSize:10,color:"#6b4423",whiteSpace:"nowrap"}}>TL gir, odagi kaldir</span>
     </div>
   );
 }
 
-/* = KAYAN BANT = */
-function KayanBant() {
-  const m = KAYANYAZILAR.join("      ");
+
+/* = FOTO YUKLEME = */
+async function imgbbYukle(dosya) {
+  const fd = new FormData();
+  fd.append("image", dosya);
+  const r = await fetch("https://api.imgbb.com/1/upload?key=764ae37046cfd464d0ef1d746d933a22", {method:"POST",body:fd});
+  const d = await r.json();
+  if(!d.success) throw new Error("imgbb hata");
+  return d.data.url;
+}
+
+function FotoYukle({mevcut, onChange}) {
+  const [yukleniyor, setYukleniyor] = React.useState(false);
+  const [onizleme,   setOnizleme]   = React.useState(mevcut||"");
+  const [hata,       setHata]       = React.useState("");
+
+  const dosyaSec = async (e) => {
+    const dosya = e.target.files[0];
+    if(!dosya) return;
+    setYukleniyor(true); setHata("");
+    try {
+      const url = await imgbbYukle(dosya);
+      setOnizleme(url); onChange(url);
+    } catch {
+      setHata("Yukleme basarisiz, tekrar deneyin.");
+      setOnizleme(mevcut||"");
+    } finally { setYukleniyor(false); }
+  };
+
   return (
-    <div style={{background:"linear-gradient(90deg,#f0e6d3,#e8d8c0,#f0e6d3)",borderTop:"1px solid rgba(212,160,23,.18)",borderBottom:"1px solid rgba(212,160,23,.18)",padding:"8px 0",overflow:"hidden"}}>
-      <div className="kayan">{m}&nbsp;&nbsp;&nbsp;&nbsp;{m}</div>
+    <div>
+      <label style={{fontSize:12,color:"#8a5c30",display:"block",marginBottom:6}}>Fotograf</label>
+      <div style={{border:"2px dashed rgba(200,134,26,.4)",borderRadius:12,padding:"18px",textAlign:"center",cursor:"pointer",position:"relative",overflow:"hidden",background:onizleme?"#f0e6d3":"transparent"}}>
+        <input type="file" accept="image/*" capture="environment" onChange={dosyaSec} disabled={yukleniyor}
+          style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",fontSize:100}}/>
+        {onizleme && !yukleniyor
+          ? <img src={onizleme} alt="" style={{width:"100%",maxHeight:180,objectFit:"cover",borderRadius:8,display:"block"}} onError={()=>setOnizleme("")}/>
+          : yukleniyor
+            ? <div><div style={{fontSize:26,marginBottom:4}}>⌛</div><div style={{fontSize:13,color:"#92400e"}}>Yukleniyor...</div></div>
+            : <div><div style={{fontSize:30,marginBottom:4}}>📷</div><div style={{fontSize:13,color:"#92400e",fontWeight:600}}>Fotograf Cek / Sec</div><div style={{fontSize:11,color:"#8a5c30",marginTop:2}}>Kamera veya galeri</div></div>
+        }
+      </div>
+      {onizleme&&!yukleniyor&&(
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+          <span style={{fontSize:10,color:"#15803d"}}>Fotograf yuklendi</span>
+          <button onClick={()=>{setOnizleme("");onChange("");}} style={{background:"none",border:"none",color:"#dc2626",fontSize:11,cursor:"pointer",fontFamily:"inherit",padding:"2px 6px"}}>Kaldir</button>
+        </div>
+      )}
+      {hata&&<p style={{margin:"4px 0 0",fontSize:11,color:"#dc2626"}}>{hata}</p>}
     </div>
   );
 }
+
+
 
 /* =
    ANA UYGULAMA
@@ -202,7 +236,7 @@ export default function App() {
     setHayvanlar(p=>p.map(x=>x.id===t.hayvanId?{...x,hisseler:[...x.hisseler,yh]}:x));
     setTalepler(p=>p.map(x=>x.id===tid?{...x,durum:"onaylı"}:x));
     const teslimTxt={ev:"Eve teslim",arac:"Aracla teslim",ciftlik:"Ciftlikte teslim",diger:"Belirtilen adrese",belirtilmedi:"Detay icin iletisime geciniz"};
-    const onayMesaj = `Bismillahirrahmanirrahim\n\nHISSE ONAYI\n\nSayin ${t.ad},\nKurban hisseniz onaylanmistir.\n\nHayvan: #${h.numara||""}\nHisse bedeli: ${new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(t.tutar)}\nVekalet: ${ekBilgi.vekalet?"Alindi":"Alinmadi - lutfen iletisime gecin"}\nTeslimat: ${teslimTxt[ekBilgi.teslimat]||"Belirtilmedi"}${ekBilgi.not?"\nNot: "+ekBilgi.not:""}\n\nHayirli kurbanlar olsun\nMurat Yalvac Ogrenci Yurdu`;
+    const onayMesaj = `HISSE ONAYI\n\nSayin ${t.ad},\nKurban hisseniz onaylanmistir.\n\nHayvan: #${h.numara||""}\nHisse bedeli: ${new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(t.tutar)}\nVekalet: ${ekBilgi.vekalet?"Alindi":"Alinmadi - lutfen iletisime gecin"}\nTeslimat: ${teslimTxt[ekBilgi.teslimat]||"Belirtilmedi"}${ekBilgi.not?"\nNot: "+ekBilgi.not:""}\n\nHayirli kurbanlar olsun\nMurat Yalvac Ogrenci Yurdu`;
     setTimeout(()=>waGonder(t.telefon, onayMesaj), 400);
   };
   const reddet    = (tid)     => setTalepler(p=>p.map(x=>x.id===tid?{...x,durum:"reddedildi"}:x));
@@ -245,7 +279,7 @@ export default function App() {
     try { await sbYaz("talepler",yeniListe); } catch{}
     /* Yoneticiye WA bildirimi */
     const hBilgi = hRef.current.find(x=>x.id===t.hayvanId);
-    const waMesaj = `YENi HiSSE TALEBi\n\nAd: ${t.ad}\nTel: ${t.telefon}\nHayvan: #${hBilgi?.numara||""}\nTutar: ${new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(t.tutar)}\n${new Date().toLocaleString("tr-TR")}\n\nOnaylamak icin yonetici paneline giris yapin.`;
+    const waMesaj = `YENI HISSE TALEBi\n\nAd: ${t.ad}\nTel: ${t.telefon}\nHayvan: #${hBilgi?.numara||""}\nTutar: ${new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(t.tutar)}\n${new Date().toLocaleString("tr-TR")}\n\nOnaylamak icin yonetici paneline giris yapin.`;
     setTimeout(()=>waGonder(WA_YONETICI, waMesaj), 400);
     return true;
   };
@@ -253,8 +287,8 @@ export default function App() {
   if(!yuklendi) return (
     <div style={{minHeight:"100vh",background:"#f5efe6",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:FONT}}>
       <div style={{fontSize:48,marginBottom:14}}></div>
-      <div style={{fontSize:15,color:"#c8861a",marginBottom:6}}>Veriler yükleniyor...</div>
-      <div style={{fontSize:11,color:"#9a6640"}}>Supabase bağlantısı kuruluyor</div>
+      <div style={{fontSize:15,color:"#92400e",marginBottom:6}}>Veriler yükleniyor...</div>
+      <div style={{fontSize:11,color:"#6b4423"}}>Supabase bağlantısı kuruluyor</div>
     </div>
   );
 
@@ -305,46 +339,46 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
   return (
     <div style={S.page}>
       {/* HEADER */}
-      <div style={{background:"linear-gradient(180deg,rgba(100,20,20,.97),rgba(55,8,8,.99))",borderBottom:"3px solid #d4a017",position:"relative",padding:"20px 16px 18px",textAlign:"center"}}>
-        <div style={{position:"absolute",top:10,left:12,fontSize:18,color:"rgba(212,160,23,.3)"}}></div>
-        <div style={{position:"absolute",top:10,right:52,fontSize:18,color:"rgba(212,160,23,.3)"}}></div>
-        <div style={{fontSize:"clamp(32px,8vw,44px)",marginBottom:2,lineHeight:1}}></div>
-        <h1 style={{margin:"4px 0 2px",fontSize:"clamp(16px,4.5vw,26px)",fontWeight:700,color:"#2d1a08",letterSpacing:"clamp(1px,0.5vw,3px)",fontFamily:FONT}}>KURBAN ORGANİZASYONU</h1>
-        <div style={{fontSize:"clamp(9px,2.5vw,12px)",color:"#c8861a",letterSpacing:"clamp(1px,0.5vw,3px)",marginBottom:4}}>MURAT YALVAÇ ÖĞRENCİ YURDU - 2026</div>
-        <div style={{fontSize:"clamp(13px,3.5vw,17px)",color:"rgba(212,160,23,.55)",fontFamily:"'Scheherazade New',serif"}}>Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim Bismillahirrahmanirrahim</div>
-        <div className="ybtn"><button onClick={onAdmin} style={{...S.btn(),fontSize:11,padding:"5px 11px"}}> Yönetici</button></div>
+      <div style={{background:"#fff",borderBottom:"1px solid rgba(200,134,26,.18)",position:"relative",padding:"0"}}>
+        <div style={{maxWidth:880,margin:"0 auto",padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:44,height:44,borderRadius:12,background:"linear-gradient(135deg,#8b1a1a,#c0392b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🐄</div>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:"clamp(14px,4vw,18px)",color:"#1a0a00",letterSpacing:.2,lineHeight:1.1}}>Murat Yalvaç Öğrenci Yurdu</div>
+            <div style={{fontSize:"clamp(10px,2.5vw,12px)",color:"#92400e",marginTop:1}}>Kurban Organizasyonu 2026</div>
+          </div>
+          <button onClick={onAdmin} style={{background:"#f5efe6",border:"1px solid rgba(200,134,26,.3)",borderRadius:8,color:"#8b1a1a",fontSize:12,fontWeight:600,padding:"7px 13px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation",flexShrink:0,whiteSpace:"nowrap"}}>⚙ Yönetici</button>
+        </div>
+        {/* İSTATİSTİK BAR */}
+        <div style={{background:"linear-gradient(90deg,#7a1a1a,#9b1c1c,#7a1a1a)",padding:"10px 16px"}}>
+          <div style={{maxWidth:880,margin:"0 auto",display:"flex",justifyContent:"space-around",gap:8}}>
+            {[
+              {lbl:"Toplam Hayvan",val:hayvanlar.filter(h=>h.durum==="aktif").length,ic:"🐄"},
+              {lbl:"Dolu Hisse",val:hayvanlar.reduce((a,h)=>a+h.hisseler.filter(x=>x.durum==="onaylı").length,0),ic:"✅"},
+              {lbl:"Boş Hisse",val:hayvanlar.reduce((a,h)=>a+(h.durum==="aktif"?getBos(h):0),0),ic:"🔓"},
+            ].map(s=>(
+              <div key={s.lbl} style={{textAlign:"center",flex:1}}>
+                <div style={{fontSize:"clamp(18px,5vw,26px)",fontWeight:700,color:"#fff",lineHeight:1}}>{s.val}</div>
+                <div style={{fontSize:"clamp(9px,2vw,11px)",color:"rgba(255,255,255,.7)",marginTop:2}}>{s.lbl}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <KayanBant/>
 
       <div style={{maxWidth:880,margin:"0 auto",padding:"14px 10px"}}>
-        {/* İSTATİSTİK */}
-        <div className="sgrid">
-          {[
-            {lbl:"Toplam Hayvan",val:hayvanlar.filter(h=>h.durum==="aktif").length,ic:""},
-            {lbl:"Dolu Hisse",val:hayvanlar.reduce((a,h)=>a+h.hisseler.filter(x=>x.durum==="onaylı").length,0),ic:""},
-            {lbl:"Boş Hisse",val:hayvanlar.reduce((a,h)=>a+(h.durum==="aktif"?getBos(h):0),0),ic:""},
-          ].map(s=>(
-            <div key={s.lbl} style={{...S.card,padding:"10px 4px",textAlign:"center"}}>
-              <div style={{fontSize:"clamp(16px,4vw,22px)"}}>{s.ic}</div>
-              <div style={{fontSize:"clamp(18px,5vw,26px)",fontWeight:700,color:"#c8861a",lineHeight:1.1}}>{s.val}</div>
-              <div style={{fontSize:"clamp(8px,2vw,10px)",color:"#8a5c30",marginTop:2,lineHeight:1.3}}>{s.lbl}</div>
-            </div>
-          ))}
-        </div>
-
         {/* FİLTRE */}
         <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
-          {[["hepsi","Tümü"],["buyukbas"," Büyükbaş"],["kucukbas"," Küçükbaş"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setFiltre(k)} style={{padding:"6px 14px",borderRadius:20,border:filtre===k?"2px solid #d4a017":"1px solid rgba(212,160,23,.3)",background:filtre===k?"rgba(212,160,23,.15)":"transparent",color:filtre===k?"#d4a017":"#a08060",cursor:"pointer",fontSize:"clamp(11px,3vw,13px)",fontFamily:FONT,touchAction:"manipulation"}}>{l}</button>
+          {[["hepsi","Tümü"],["buyukbas","Büyükbaş"],["kucukbas","Küçükbaş"],["bagis","🤲 Bağış"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setFiltre(k)} style={{padding:"6px 14px",borderRadius:20,border:filtre===k?"2px solid #8b1a1a":"1px solid rgba(139,26,26,.25)",background:filtre===k?"rgba(139,26,26,.1)":"transparent",color:filtre===k?"#8b1a1a":"#4a2810",cursor:"pointer",fontSize:"clamp(11px,3vw,13px)",fontFamily:FONT,touchAction:"manipulation"}}>{l}</button>
           ))}
         </div>
 
         {/* KARTLAR */}
         {aktif.length===0?(
-          <div style={{textAlign:"center",padding:"40px 20px",color:"#9a6640"}}>
+          <div style={{textAlign:"center",padding:"40px 20px",color:"#6b4423"}}>
             <div style={{fontSize:44}}></div>
-            <p style={{fontSize:15,color:"#6b4423",margin:"10px 0 4px"}}>Henüz hayvan eklenmemiş.</p>
+            <p style={{fontSize:15,color:"#4a2810",margin:"10px 0 4px"}}>Henüz hayvan eklenmemiş.</p>
             <p style={{fontSize:12}}>Yönetici onaylı hayvanlar burada görünecek.</p>
           </div>
         ):(
@@ -360,28 +394,32 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
                     :<div style={{height:80,background:"rgba(200,134,26,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:38}}>{h.tip==="buyukbas"?"":h.kategori==="koyun"?"":""}</div>
                   }
                   <div style={{padding:"10px 12px"}}>
-                    <div style={{display:"inline-block",background:h.tip==="buyukbas"?"#8b1a1a":"#1a4a1a",padding:"1px 9px",borderRadius:20,fontSize:9,color:"#2d1a08",marginBottom:6}}>
-                      {h.tip==="buyukbas"?" BÜYÜKBAŞ":` ${(h.kategori||"").toUpperCase()}`}
+                    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
+                      <div style={{display:"inline-block",background:h.tip==="buyukbas"?"#8b1a1a":"#14532d",padding:"1px 9px",borderRadius:20,fontSize:9,color:"#fff8f0"}}>
+                        {h.tip==="buyukbas"?" BÜYÜKBAŞ":` ${(h.kategori||"").toUpperCase()}`}
+                      </div>
+                      {h.bagisCurban&&<div style={{display:"inline-block",background:"#92400e",padding:"1px 9px",borderRadius:20,fontSize:9,color:"#fff8f0"}}>🤲 BAĞIŞ</div>}
                     </div>
                     <div style={{display:"flex",alignItems:"baseline",gap:7,marginBottom:2}}>
-                      <span style={{fontSize:"clamp(17px,4.5vw,22px)",fontWeight:700,color:"#c8861a"}}>#{h.numara}</span>
-                      <span style={{fontSize:"clamp(10px,2.5vw,12px)",color:"#6b4423"}}>Kesim: {h.kesimSirasi}. sıra</span>
+                      <span style={{fontSize:"clamp(17px,4.5vw,22px)",fontWeight:700,color:"#8b1a1a"}}>#{h.numara}</span>
+                      <span style={{fontSize:"clamp(10px,2.5vw,12px)",color:"#4a2810"}}>Kesim: {h.kesimSirasi}. sıra</span>
                     </div>
-                    <div style={{fontSize:"clamp(15px,4vw,19px)",fontWeight:700,color:"#2d1a08"}}>{formatTL(hT)}<span style={{fontSize:10,fontWeight:400,color:"#6b4423"}}>/hisse</span></div>
-                    {h.tip==="buyukbas"&&<div style={{fontSize:10,color:"#9a6640"}}>Toplam: {formatTL(h.fiyat)}</div>}
-                    <div style={{marginTop:8}}>
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#6b4423",marginBottom:2}}>
+                    <div style={{fontSize:"clamp(15px,4vw,19px)",fontWeight:700,color:"#8b1a1a"}}>{formatTL(hT)}<span style={{fontSize:10,fontWeight:400,color:"#4a2810"}}>/hisse</span></div>
+                    {h.tip==="buyukbas"&&<div style={{fontSize:10,color:"#6b4423"}}>Toplam: {formatTL(h.fiyat)}</div>}
+                    {!h.bagisCurban&&<div style={{marginTop:8}}>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#4a2810",marginBottom:2}}>
                         <span>{dolu}/{h.maxHisse} dolu</span>
-                        <span style={{color:"#4ade80",fontWeight:600}}>{bos} boş</span>
+                        <span style={{color:"#15803d",fontWeight:700}}>{bos} boş</span>
                       </div>
                       <div style={{display:"flex",gap:3}}>
                         {Array.from({length:h.maxHisse}).map((_,i)=>(
-                          <div key={i} style={{flex:1,height:6,borderRadius:3,background:i<dolu?"#8b1a1a":i<dolu+bek?"#d4a017":"rgba(255,255,255,.1)"}}/>
+                          <div key={i} style={{flex:1,height:6,borderRadius:3,background:i<dolu?"#8b1a1a":i<dolu+bek?"#d4a017":"rgba(200,134,26,.15)"}}/>
                         ))}
                       </div>
-                      {bek>0&&<div style={{fontSize:9,color:"#c8861a",marginTop:2}}> {bek} bekleyen talep</div>}
-                    </div>
-                    <div style={{marginTop:8,textAlign:"center",fontSize:11,color:"#9a6640"}}> Detay / Talep için tıkla</div>
+                      {bek>0&&<div style={{fontSize:9,color:"#92400e",marginTop:2}}>{bek} bekleyen talep</div>}
+                    </div>}
+                    {h.bagisCurban&&<div style={{marginTop:8,fontSize:11,color:"#92400e",fontWeight:600}}>🤲 Bağış Kurbanı</div>}
+                    <div style={{marginTop:6,textAlign:"center",fontSize:11,color:"#8a5c30"}}>Detay için tıkla →</div>
                   </div>
                 </div>
               );
@@ -389,20 +427,15 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
           </div>
         )}
 
-        {/* AYET */}
-        <div style={{textAlign:"center",margin:"30px 0 6px",padding:"16px 12px",borderTop:"1px solid rgba(212,160,23,.1)"}}>
-          <div style={{fontSize:"clamp(13px,3.5vw,19px)",color:"rgba(212,160,23,.45)",fontFamily:"'Scheherazade New',serif",marginBottom:6,lineHeight:1.9}}>
-                     
-          </div>
-          <div style={{fontSize:"clamp(9px,2.5vw,11px)",color:"#9a6640",fontStyle:"italic"}}>
-            "Allah'a ne etleri ulaşır ne de kanları; fakat O'na sizden takva ulaşır." - Hac Suresi, 37
-          </div>
+        {/* FOOTER */}
+        <div style={{textAlign:"center",margin:"32px 0 8px",padding:"16px 12px",borderTop:"1px solid rgba(200,134,26,.12)"}}>
+          <div style={{fontSize:11,color:"#92400e"}}>Murat Yalvaç Öğrenci Yurdu — Kurban Organizasyonu 2026</div>
         </div>
       </div>
 
       {/* TOAST */}
       {mesaj&&(
-        <div style={{position:"fixed",bottom:16,left:"50%",transform:"translateX(-50%)",background:mesaj.tip==="ok"?"#14532d":"#7f1d1d",border:`1px solid ${mesaj.tip==="ok"?"#4ade80":"#f87171"}`,color:"#fff",padding:"11px 18px",borderRadius:10,maxWidth:"92vw",textAlign:"center",zIndex:400,fontSize:"clamp(11px,3vw,13px)",boxShadow:"0 4px 20px rgba(0,0,0,.6)",wordBreak:"break-word"}}>
+        <div style={{position:"fixed",bottom:16,left:"50%",transform:"translateX(-50%)",background:mesaj.tip==="ok"?"#14532d":"#991b1b",border:`1px solid ${mesaj.tip==="ok"?"#4ade80":"#f87171"}`,color:"#fff",padding:"11px 18px",borderRadius:10,maxWidth:"92vw",textAlign:"center",zIndex:400,fontSize:"clamp(11px,3vw,13px)",boxShadow:"0 4px 20px rgba(0,0,0,.6)",wordBreak:"break-word"}}>
           {mesaj.metin}
         </div>
       )}
@@ -424,49 +457,55 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
               <div style={{padding:"16px 18px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div>
-                    <div style={{display:"inline-block",background:h.tip==="buyukbas"?"#8b1a1a":"#1a4a1a",padding:"1px 9px",borderRadius:20,fontSize:9,color:"#2d1a08",marginBottom:5}}>
+                    <div style={{display:"inline-block",background:h.tip==="buyukbas"?"#8b1a1a":"#14532d",padding:"1px 9px",borderRadius:20,fontSize:9,color:"#fff",marginBottom:5}}>
                       {h.tip==="buyukbas"?" BÜYÜKBAŞ":` ${(h.kategori||"").toUpperCase()}`}
                     </div>
-                    <h2 style={{margin:"0 0 1px",color:"#c8861a",fontSize:"clamp(17px,4.5vw,22px)",fontFamily:FONT}}>#{h.numara} Nolu Hayvan</h2>
-                    <p style={{margin:0,color:"#6b4423",fontSize:"clamp(11px,3vw,13px)"}}>Kesim Sırası: {h.kesimSirasi}. hayvan</p>
+                    <h2 style={{margin:"0 0 1px",color:"#92400e",fontSize:"clamp(17px,4.5vw,22px)",fontFamily:FONT}}>#{h.numara} Nolu Hayvan</h2>
+                    <p style={{margin:0,color:"#4a2810",fontSize:"clamp(11px,3vw,13px)"}}>Kesim Sırası: {h.kesimSirasi}. hayvan</p>
                   </div>
-                  <button onClick={()=>setDetay(null)} style={{background:"none",border:"none",color:"#6b4423",fontSize:22,cursor:"pointer",padding:"2px 6px",touchAction:"manipulation"}}></button>
+                  <button onClick={()=>setDetay(null)} style={{background:"none",border:"none",color:"#4a2810",fontSize:22,cursor:"pointer",padding:"2px 6px",touchAction:"manipulation"}}></button>
                 </div>
                 <div className="dgrid">
                   {[
-                    {lbl:"HİSSE BEDELİ",val:formatTL(hT),renk:"#d4a017",bg:"rgba(212,160,23,.1)",br:"rgba(212,160,23,.3)"},
-                    {lbl:"BOŞ YER",val:efBos>0?efBos:"DOLU",renk:efBos>0?"#4ade80":"#f87171",bg:efBos>0?"rgba(74,222,128,.08)":"rgba(248,113,113,.08)",br:efBos>0?"rgba(74,222,128,.3)":"rgba(248,113,113,.3)"},
-                    {lbl:"KESİM SIRASI",val:`${h.kesimSirasi}.`,renk:"#e8d5a3",bg:"rgba(255,255,255,.04)",br:"rgba(255,255,255,.08)"},
-                    {lbl:"TOPLAM HİSSE",val:`${dolu}/${h.maxHisse}`,renk:"#e8d5a3",bg:"rgba(255,255,255,.04)",br:"rgba(255,255,255,.08)"},
+                    {lbl:"HİSSE BEDELİ",val:formatTL(hT),renk:"#8b1a1a",bg:"rgba(139,26,26,.08)",br:"rgba(139,26,26,.25)"},
+                    {lbl:"BOŞ YER",val:efBos>0?efBos:"DOLU",renk:efBos>0?"#15803d":"#dc2626",bg:efBos>0?"rgba(74,222,128,.08)":"rgba(248,113,113,.08)",br:efBos>0?"rgba(74,222,128,.3)":"rgba(248,113,113,.3)"},
+                    {lbl:"KESİM SIRASI",val:`${h.kesimSirasi}.`,renk:"#2d1a08",bg:"rgba(122,46,14,.06)",br:"rgba(122,46,14,.15)"},
+                    {lbl:"TOPLAM HİSSE",val:`${dolu}/${h.maxHisse}`,renk:"#2d1a08",bg:"rgba(122,46,14,.06)",br:"rgba(122,46,14,.15)"},
                   ].map(x=>(
                     <div key={x.lbl} style={{background:x.bg,border:`1px solid ${x.br}`,borderRadius:9,padding:"10px",textAlign:"center"}}>
-                      <div style={{fontSize:8,color:"#6b4423",marginBottom:3,letterSpacing:1}}>{x.lbl}</div>
+                      <div style={{fontSize:8,color:"#4a2810",marginBottom:3,letterSpacing:1}}>{x.lbl}</div>
                       <div style={{fontSize:"clamp(14px,3.5vw,17px)",fontWeight:700,color:x.renk}}>{x.val}</div>
                     </div>
                   ))}
                 </div>
                 <div style={{marginBottom:12}}>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#6b4423",marginBottom:2}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#4a2810",marginBottom:2}}>
                     <span>Doluluk</span>
-                    {bek>0&&<span style={{color:"#c8861a"}}> {bek} bekleyen</span>}
+                    {bek>0&&<span style={{color:"#92400e"}}> {bek} bekleyen</span>}
                   </div>
                   <div style={{display:"flex",gap:3}}>
                     {Array.from({length:h.maxHisse}).map((_,i)=>(
-                      <div key={i} style={{flex:1,height:8,borderRadius:4,background:i<dolu?"#8b1a1a":i<dolu+bek?"#d4a017":"rgba(255,255,255,.1)"}}/>
+                      <div key={i} style={{flex:1,height:8,borderRadius:4,background:i<dolu?"#8b1a1a":i<dolu+bek?"#d4a017":"#e8d5b7"}}/>
                     ))}
                   </div>
                 </div>
                 {h.aciklama&&(
                   <div style={{background:"rgba(200,134,26,.07)",border:"1px solid rgba(212,160,23,.12)",borderRadius:8,padding:"9px 12px",marginBottom:12}}>
-                    <div style={{fontSize:8,color:"#6b4423",marginBottom:3,letterSpacing:1}}> AÇIKLAMA</div>
+                    <div style={{fontSize:8,color:"#4a2810",marginBottom:3,letterSpacing:1}}> AÇIKLAMA</div>
                     <p style={{margin:0,fontSize:"clamp(11px,3vw,13px)",color:"#c8b88a",lineHeight:1.7}}>{h.aciklama}</p>
                   </div>
                 )}
-                {efBos>0
-                  ?<button onClick={()=>{setDetay(null);setTalepModal(h);}} style={{width:"100%",padding:"13px",background:"linear-gradient(90deg,#8b1a1a,#c0392b)",border:"none",borderRadius:10,color:"#2d1a08",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:"clamp(13px,3.5vw,15px)",touchAction:"manipulation"}}>
-                     Hisse Talep Et - {formatTL(hT)}
-                  </button>
-                  :<div style={{textAlign:"center",padding:"11px",background:"#f9f3ea",borderRadius:10,color:"#9a6640",fontSize:13}}>Bu hayvan için yer kalmadı</div>
+                {h.bagisCurban
+                  ?<div style={{textAlign:"center",padding:"14px",background:"linear-gradient(135deg,rgba(146,64,14,.08),rgba(139,26,26,.06))",borderRadius:10,border:"1px solid rgba(146,64,14,.2)"}}>
+                    <div style={{fontSize:20,marginBottom:6}}>🤲</div>
+                    <div style={{fontWeight:700,color:"#92400e",fontSize:14,marginBottom:3}}>Bağış Kurbanı</div>
+                    <div style={{fontSize:12,color:"#6b4423"}}>Bu kurban bağış olarak ayrılmıştır.<br/>Hisse alınamaz.</div>
+                  </div>
+                  :efBos>0
+                    ?<button onClick={()=>{setDetay(null);setTalepModal(h);}} style={{width:"100%",padding:"13px",background:"linear-gradient(90deg,#7a1a1a,#b91c1c)",border:"none",borderRadius:10,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:"clamp(13px,3.5vw,15px)",touchAction:"manipulation"}}>
+                       Hisse Talep Et — {formatTL(hT)}
+                    </button>
+                    :<div style={{textAlign:"center",padding:"11px",background:"#f9f3ea",borderRadius:10,color:"#6b4423",fontSize:13}}>Bu hayvan için yer kalmadı</div>
                 }
               </div>
             </div>
@@ -478,8 +517,8 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
       {talepModal&&(
         <div className="modal-bg" onClick={()=>setTalepModal(null)}>
           <div className="talep-kart" onClick={e=>e.stopPropagation()}>
-            <h3 style={{margin:"0 0 3px",color:"#c8861a",fontFamily:FONT,fontSize:"clamp(15px,4vw,18px)"}}> Hisse Talebi</h3>
-            <p style={{margin:"0 0 14px",color:"#6b4423",fontSize:"clamp(11px,3vw,13px)"}}>
+            <h3 style={{margin:"0 0 3px",color:"#92400e",fontFamily:FONT,fontSize:"clamp(15px,4vw,18px)"}}> Hisse Talebi</h3>
+            <p style={{margin:"0 0 14px",color:"#4a2810",fontSize:"clamp(11px,3vw,13px)"}}>
               #{talepModal.numara} nolu hayvan - {formatTL(talepModal.tip==="buyukbas"?Math.round(talepModal.fiyat/talepModal.maxHisse):talepModal.fiyat)}
             </p>
             <div style={{marginBottom:11}}>
@@ -490,7 +529,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
               <label style={S.lbl}>Telefon *</label>
               <input value={form.telefon} onChange={e=>setForm(v=>({...v,telefon:e.target.value}))} placeholder="0555 123 45 67" inputMode="tel" style={S.inp}/>
             </div>
-            <div style={{background:"rgba(200,134,26,.1)",border:"1px solid rgba(200,134,26,.2)",borderRadius:8,padding:"9px 12px",marginBottom:14,fontSize:"clamp(11px,3vw,13px)",color:"#c8861a"}}>
+            <div style={{background:"rgba(200,134,26,.1)",border:"1px solid rgba(200,134,26,.2)",borderRadius:8,padding:"9px 12px",marginBottom:14,fontSize:"clamp(11px,3vw,13px)",color:"#92400e"}}>
               i Talebiniz yönetici onayına gönderilecek. Onay sonrası iletişime geçilecektir.
             </div>
             <div style={{display:"flex",gap:8}}>
@@ -514,13 +553,13 @@ function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
     <div style={{...S.page,display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:16}}>
       <div style={{background:"linear-gradient(160deg,#150a02,#0e0601)",border:"1px solid #c8861a",borderRadius:18,padding:"clamp(24px,6vw,36px) clamp(18px,5vw,28px)",width:"100%",maxWidth:330,textAlign:"center"}}>
         <div style={{fontSize:36,marginBottom:10}}></div>
-        <h2 style={{color:"#c8861a",margin:"0 0 4px",fontFamily:FONT}}>Yönetici Girişi</h2>
-        <p style={{color:"#6b4423",fontSize:13,margin:"0 0 18px"}}>Şifreyi girerek devam edin</p>
+        <h2 style={{color:"#92400e",margin:"0 0 4px",fontFamily:FONT}}>Yönetici Girişi</h2>
+        <p style={{color:"#4a2810",fontSize:13,margin:"0 0 18px"}}>Şifreyi girerek devam edin</p>
         <input type="password" value={sifre} onChange={e=>setSifre(e.target.value)} onKeyDown={e=>e.key==="Enter"&&onGiris()} placeholder="Şifre"
           style={{...S.inp,textAlign:"center",border:`1px solid ${err?"#f87171":"rgba(212,160,23,.3)"}`}}/>
         {err&&<p style={{color:"#f87171",fontSize:12,margin:"6px 0 0"}}> Hatalı şifre</p>}
         <button onClick={onGiris} style={{marginTop:12,width:"100%",...S.solid(),padding:13,fontSize:15}}>Giriş Yap</button>
-        <button onClick={onGeri} style={{marginTop:6,width:"100%",background:"transparent",border:"none",color:"#6b4423",cursor:"pointer",fontFamily:FONT,fontSize:13,padding:"8px",touchAction:"manipulation"}}>&larr; Geri Dön</button>
+        <button onClick={onGeri} style={{marginTop:6,width:"100%",background:"transparent",border:"none",color:"#4a2810",cursor:"pointer",fontFamily:FONT,fontSize:13,padding:"8px",touchAction:"manipulation"}}>&larr; Geri Dön</button>
       </div>
     </div>
   );
@@ -531,7 +570,7 @@ function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
 = */
 function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH,onSilHisse,onDurum,onHisseDirekt,onOdeme,onCikis,sbHata}) {
   const [sekme,   setSekme]   = useState("talepler");
-  const [yeniH,   setYeniH]   = useState({tip:"buyukbas",kategori:"koyun",numara:"",kesimSirasi:"",fiyat:"",maxHisse:"7",foto:"",aciklama:""});
+  const [yeniH,   setYeniH]   = useState({tip:"buyukbas",kategori:"koyun",numara:"",kesimSirasi:"",fiyat:"",maxHisse:"7",foto:"",aciklama:"",bagisCurban:false});
   const [acik,    setAcik]    = useState(null);
   const [duzEdit, setDuzEdit] = useState(null); // güncelleme formu açık hayvan id
   const [duzForm, setDuzForm] = useState({});   // güncelleme form değerleri
@@ -546,8 +585,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
 
   const ekleHayvan = ()=>{
     if(!yeniH.numara||!yeniH.kesimSirasi||!yeniH.fiyat){alert("Hayvan No, Kesim Sırası ve Fiyat zorunludur!");return;}
-    onEkleH({...yeniH,numara:+yeniH.numara,kesimSirasi:+yeniH.kesimSirasi,fiyat:+yeniH.fiyat,maxHisse:yeniH.tip==="kucukbas"?1:+yeniH.maxHisse});
-    setYeniH({tip:"buyukbas",kategori:"koyun",numara:"",kesimSirasi:"",fiyat:"",maxHisse:"7",foto:"",aciklama:""});
+    onEkleH({...yeniH,numara:+yeniH.numara,kesimSirasi:+yeniH.kesimSirasi,fiyat:+yeniH.fiyat,maxHisse:yeniH.bagisCurban?1:(yeniH.tip==="kucukbas"?1:+yeniH.maxHisse),bagisCurban:yeniH.bagisCurban});
+    setYeniH({tip:"buyukbas",kategori:"koyun",numara:"",kesimSirasi:"",fiyat:"",maxHisse:"7",foto:"",aciklama:"",bagisCurban:false});
     alert(" Hayvan eklendi!");
   };
 
@@ -608,10 +647,10 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
   return (
     <div style={S.page}>
       {/* Header */}
-      <div style={{background:"linear-gradient(90deg,#0d0500,#1a0800,#0d0500)",borderBottom:"2px solid #d4a017",padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+      <div style={{background:"linear-gradient(90deg,#6b1515,#8b1a1a,#6b1515)",borderBottom:"2px solid #c8861a",padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
         <div style={{minWidth:0}}>
-          <h1 style={{margin:0,fontSize:"clamp(13px,3.5vw,17px)",color:"#c8861a",fontFamily:FONT}}> Yönetici Paneli</h1>
-          <p style={{margin:0,fontSize:10,color:"#6b4423"}}>Murat Yalvaç Öğrenci Yurdu - 2026</p>
+          <h1 style={{margin:0,fontSize:"clamp(13px,3.5vw,17px)",color:"#92400e",fontFamily:FONT}}> Yönetici Paneli</h1>
+          <p style={{margin:0,fontSize:10,color:"#4a2810"}}>Murat Yalvaç Öğrenci Yurdu - 2026</p>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0}}>
           {bekleyen.length>0&&<span style={{background:"#c0392b",color:"#fff",borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{bekleyen.length}</span>}
@@ -623,7 +662,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
       {/* Sekmeler */}
       <div className="sbar">
         {[["talepler",` Talepler${bekleyen.length>0?` (${bekleyen.length})`:""}`,],["hayvanlar"," Hayvanlar"],["ekle"," Ekle"],["rapor"," Rapor"]].map(([k,l])=>(
-          <button key={k} className="sbtn" onClick={()=>setSekme(k)} style={{borderBottomColor:sekme===k?"#c8861a":"transparent",color:sekme===k?"#c8861a":"#806040"}}>{l}</button>
+          <button key={k} className="sbtn" onClick={()=>setSekme(k)} style={{borderBottomColor:sekme===k?"#7a2e0e":"transparent",color:sekme===k?"#7a2e0e":"#5c3d1e"}}>{l}</button>
         ))}
       </div>
 
@@ -632,9 +671,9 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
         {/* = TALEPLER = */}
         {sekme==="talepler"&&(
           <div>
-            <h3 style={{color:"#c8861a",marginTop:0,fontFamily:FONT,fontSize:16}}>Bekleyen Talepler</h3>
+            <h3 style={{color:"#8b1a1a",marginTop:0,fontFamily:FONT,fontSize:16}}>Bekleyen Talepler</h3>
             {bekleyen.length===0
-              ?<p style={{color:"#9a6640",fontSize:13}}>Bekleyen talep yok.</p>
+              ?<p style={{color:"#6b4423",fontSize:13}}>Bekleyen talep yok.</p>
               :bekleyen.map(t=>{
                 const h=hayvanlar.find(x=>x.id===t.hayvanId);
                 const of=onayForm[t.id]||BOS_ONAY;
@@ -643,17 +682,17 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                   <div key={t.id} style={{...S.card,padding:"13px 14px",marginBottom:12}}>
                     <div style={{marginBottom:10}}>
                       <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4,marginBottom:4}}>
-                        <span style={{color:"#c8861a",fontWeight:700,fontSize:14}}>#{h?.numara} nolu hayvan</span>
-                        <span style={{color:"#9a6640",fontSize:11}}>{t.tarih}</span>
+                        <span style={{color:"#7a2e0e",fontWeight:700,fontSize:14}}>#{h?.numara} nolu hayvan</span>
+                        <span style={{color:"#6b4423",fontSize:11}}>{t.tarih}</span>
                       </div>
                       <div style={{color:"#2d1a08",fontSize:15,fontWeight:600,marginBottom:2}}>{t.ad}</div>
                       <div style={{display:"flex",gap:12,fontSize:12,color:"#8a5c30",flexWrap:"wrap"}}>
                         <span>Tel: {t.telefon}</span>
-                        <span style={{color:"#c8861a"}}>Tutar: {formatTL(t.tutar)}</span>
+                        <span style={{color:"#92400e"}}>Tutar: {formatTL(t.tutar)}</span>
                       </div>
                     </div>
                     <div style={{background:"rgba(200,134,26,.07)",border:"1px solid rgba(200,134,26,.2)",borderRadius:9,padding:"11px",marginBottom:10}}>
-                      <p style={{margin:"0 0 9px",fontSize:11,color:"#c8861a",fontWeight:700}}>Onay Bilgileri</p>
+                      <p style={{margin:"0 0 9px",fontSize:11,color:"#7a2e0e",fontWeight:700}}>Onay Bilgileri</p>
                       <div className="hfrow" style={{marginBottom:8}}>
                         <div>
                           <label style={S.lbl}>Teslimat Yeri</label>
@@ -668,7 +707,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                         <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
                           <label style={S.lbl}>Vekalet</label>
                           <button onClick={()=>setOf({vekalet:!of.vekalet})}
-                            style={{padding:"11px 12px",borderRadius:8,border:`1px solid ${of.vekalet?"#4ade80":"rgba(200,134,26,.3)"}`,background:of.vekalet?"rgba(74,222,128,.12)":"#fff",color:of.vekalet?"#16a34a":"#6b4423",cursor:"pointer",fontFamily:FONT,fontSize:13,touchAction:"manipulation"}}>
+                            style={{padding:"11px 12px",borderRadius:8,border:`1px solid ${of.vekalet?"#4ade80":"rgba(200,134,26,.3)"}`,background:of.vekalet?"rgba(74,222,128,.12)":"#fff",color:of.vekalet?"#15803d":"#6b4423",cursor:"pointer",fontFamily:FONT,fontSize:13,touchAction:"manipulation"}}>
                             {of.vekalet?"Alindi":"Alinmadi"}
                           </button>
                         </div>
@@ -694,9 +733,9 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                 );
               })
             }
-            <h3 style={{color:"#6b4423",marginTop:20,fontFamily:FONT,fontSize:14}}>Geçmiş Talepler</h3>
+            <h3 style={{color:"#4a2810",marginTop:20,fontFamily:FONT,fontSize:14}}>Geçmiş Talepler</h3>
             {talepler.filter(t=>t.durum!=="bekliyor").length===0
-              ?<p style={{color:"#9a6640",fontSize:12}}>Geçmiş talep yok.</p>
+              ?<p style={{color:"#6b4423",fontSize:12}}>Geçmiş talep yok.</p>
               :talepler.filter(t=>t.durum!=="bekliyor").slice().reverse().map(t=>{
                 const h=hayvanlar.find(x=>x.id===t.hayvanId);
                 return (
@@ -705,7 +744,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       <span>#{h?.numara} - {t.ad} - {t.telefon}</span>
                       <span style={{color:t.durum==="onaylı"?"#4ade80":"#f87171",fontWeight:600}}>{t.durum==="onaylı"?" Onaylı":" Reddedildi"}</span>
                     </div>
-                    <div style={{color:"#9a6640",marginTop:2}}>{formatTL(t.tutar)} - {t.tarih}</div>
+                    <div style={{color:"#6b4423",marginTop:2}}>{formatTL(t.tutar)} - {t.tarih}</div>
                   </div>
                 );
               })
@@ -716,7 +755,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
         {/* = HAYVANLAR = */}
         {sekme==="hayvanlar"&&(
           <div>
-            <h3 style={{color:"#c8861a",marginTop:0,fontFamily:FONT,fontSize:16}}>Hayvan Listesi ({hayvanlar.length})</h3>
+            <h3 style={{color:"#8b1a1a",marginTop:0,fontFamily:FONT,fontSize:16}}>Hayvan Listesi ({hayvanlar.length})</h3>
             {[...hayvanlar].sort((a,b)=>a.kesimSirasi-b.kesimSirasi).map(h=>{
               const bos=getBos(h),dolu=h.maxHisse-bos;
               const hT=h.tip==="buyukbas"?Math.round(h.fiyat/h.maxHisse):h.fiyat;
@@ -731,8 +770,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       {h.foto&&<img src={h.foto} alt="" style={{width:40,height:40,borderRadius:7,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                       <div style={{minWidth:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                          <span style={{fontSize:15,color:"#c8861a",fontWeight:700}}>#{h.numara}</span>
-                          <span style={{fontSize:11,color:"#6b4423"}}>{h.tip==="buyukbas"?" Büyükbaş":` ${h.kategori}`} - {h.kesimSirasi}. sıra</span>
+                          <span style={{fontSize:15,color:"#7a2e0e",fontWeight:700}}>#{h.numara}</span>
+                          <span style={{fontSize:11,color:"#4a2810"}}>{h.tip==="buyukbas"?" Büyükbaş":` ${h.kategori}`} - {h.kesimSirasi}. sıra</span>
                         </div>
                         <div style={{fontSize:11,color:"#8a5c30",marginTop:1}}>
                           {formatTL(hT)}/hisse - <span style={{color:"#4ade80"}}>{bos} boş</span> / {h.maxHisse}
@@ -765,7 +804,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                             <div><label style={S.lbl}>Fiyat (TL)</label><input value={duzForm.fiyat} onChange={e=>setDuzForm(p=>({...p,fiyat:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>
                             {h.tip==="buyukbas"&&<div><label style={S.lbl}>Max Hisse</label><input value={duzForm.maxHisse} onChange={e=>setDuzForm(p=>({...p,maxHisse:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={S.inp}/></div>}
                           </div>
-                          <div><label style={S.lbl}> Foto URL</label><input value={duzForm.foto} onChange={e=>setDuzForm(p=>({...p,foto:e.target.value}))} placeholder="https://i.ibb.co/..." style={S.inp}/></div>
+                          <FotoYukle mevcut={duzForm.foto} onChange={url=>setDuzForm(p=>({...p,foto:url}))}/>
                           <div><label style={S.lbl}> Açıklama</label><textarea value={duzForm.aciklama} onChange={e=>setDuzForm(p=>({...p,aciklama:e.target.value}))} rows={2} style={{...S.inp,resize:"vertical"}}/></div>
                           <div style={{display:"flex",gap:8}}>
                             <button onClick={()=>setDuzEdit(null)} style={{flex:1,...S.btn("#604030"),color:"#8a5c30"}}>İptal</button>
@@ -776,7 +815,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
 
                       {/* HİSSEDAR EKLE */}
                       <div style={{background:"rgba(200,134,26,.07)",border:"1px solid rgba(200,134,26,.2)",borderRadius:9,padding:"12px",marginBottom:12,marginTop:isDuz?12:0}}>
-                        <p style={{margin:"0 0 10px",fontSize:12,color:"#c8861a",fontWeight:700}}>Hissedar Ekle ({bos} bos yer)</p>
+                        <p style={{margin:"0 0 10px",fontSize:12,color:"#7a2e0e",fontWeight:700}}>Hissedar Ekle ({bos} bos yer)</p>
                         <div className="hfrow" style={{marginBottom:8}}>
                           <div><label style={S.lbl}>Ad Soyad *</label><input value={hf.ad||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,ad:e.target.value}}))} placeholder="Ahmet Yilmaz" style={S.inp}/></div>
                           <div><label style={S.lbl}>Telefon *</label><input value={hf.telefon||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,telefon:e.target.value}}))} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/></div>
@@ -795,7 +834,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                           <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
                             <label style={S.lbl}>Vekalet</label>
                             <button onClick={()=>setHForm(p=>({...p,[h.id]:{...hf,vekalet:!hf.vekalet}}))}
-                              style={{padding:"11px 10px",borderRadius:8,border:`1px solid ${hf.vekalet?"#16a34a":"rgba(200,134,26,.3)"}`,background:hf.vekalet?"rgba(74,222,128,.1)":"#fff",color:hf.vekalet?"#16a34a":"#6b4423",cursor:"pointer",fontFamily:FONT,fontSize:13,touchAction:"manipulation"}}>
+                              style={{padding:"11px 10px",borderRadius:8,border:`1px solid ${hf.vekalet?"#16a34a":"rgba(200,134,26,.3)"}`,background:hf.vekalet?"rgba(74,222,128,.1)":"#fff",color:hf.vekalet?"#15803d":"#6b4423",cursor:"pointer",fontFamily:FONT,fontSize:13,touchAction:"manipulation"}}>
                               {hf.vekalet?"Alindi":"Alinmadi"}
                             </button>
                           </div>
@@ -814,9 +853,9 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       </div>
 
                       {/* HİSSE LİSTESİ */}
-                      <p style={{margin:"0 0 8px",fontSize:11,color:"#6b4423",fontWeight:700}}>Onaylı Hisseler ({dolu}/{h.maxHisse}):</p>
+                      <p style={{margin:"0 0 8px",fontSize:11,color:"#4a2810",fontWeight:700}}>Onaylı Hisseler ({dolu}/{h.maxHisse}):</p>
                       {h.hisseler.filter(x=>x.durum==="onaylı").length===0
-                        ?<p style={{color:"#9a6640",fontSize:11}}>Henuz onaylı hisse yok.</p>
+                        ?<p style={{color:"#6b4423",fontSize:11}}>Henuz onaylı hisse yok.</p>
                         :h.hisseler.filter(x=>x.durum==="onaylı").map((hisse,i)=>{
                           const kalan=hisse.tutar-(hisse.odenen||0);
                           const teslimLabel={ev:"Eve",arac:"Aracla",ciftlik:"Ciftlikte",diger:"Diger",belirtilmedi:"Belirtilmedi"};
@@ -824,16 +863,16 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                           <div key={hisse.id} style={{background:"#fdf8f2",border:"1px solid rgba(200,134,26,.15)",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
                               <div>
-                                <span style={{color:"#c8861a",fontWeight:700,fontSize:13}}>{i+1}. {hisse.ad}</span>
+                                <span style={{color:"#8b1a1a",fontWeight:700,fontSize:13}}>{i+1}. {hisse.ad}</span>
                                 <span style={{fontSize:11,color:"#8a5c30",marginLeft:8}}>Tel: {hisse.telefon}</span>
                               </div>
                               <button onClick={()=>onSilHisse(h.id,hisse.id)} style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:16,padding:"0 2px",touchAction:"manipulation",flexShrink:0}}>Sil</button>
                             </div>
                             <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
                               {hisse.teslimat&&hisse.teslimat!=="belirtilmedi"&&(
-                                <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.3)",color:"#16a34a"}}>{teslimLabel[hisse.teslimat]||hisse.teslimat}</span>
+                                <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.3)",color:"#15803d"}}>{teslimLabel[hisse.teslimat]||hisse.teslimat}</span>
                               )}
-                              <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:hisse.vekalet?"rgba(74,222,128,.1)":"rgba(248,113,113,.08)",border:`1px solid ${hisse.vekalet?"rgba(74,222,128,.3)":"rgba(248,113,113,.2)"}`,color:hisse.vekalet?"#16a34a":"#f87171"}}>
+                              <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:hisse.vekalet?"rgba(74,222,128,.1)":"rgba(248,113,113,.08)",border:`1px solid ${hisse.vekalet?"rgba(74,222,128,.3)":"rgba(248,113,113,.2)"}`,color:hisse.vekalet?"#15803d":"#dc2626"}}>
                                 Vekalet: {hisse.vekalet?"Alindi":"Alinmadi"}
                               </span>
                             </div>
@@ -845,9 +884,9 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                             {hisse.not&&<div style={{fontSize:11,color:"#8a5c30",marginBottom:8,fontStyle:"italic"}}>Not: {hisse.not}</div>}
                             <div style={{background:"rgba(200,134,26,.08)",borderRadius:8,padding:"8px 10px"}}>
                               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6,flexWrap:"wrap",gap:4}}>
-                                <span>Toplam: <strong style={{color:"#c8861a"}}>{formatTL(hisse.tutar)}</strong></span>
-                                <span style={{color:"#16a34a"}}>Odenen: <strong>{formatTL(hisse.odenen||0)}</strong></span>
-                                <span style={{color:kalan>0?"#dc2626":"#16a34a"}}>Kalan: <strong>{formatTL(kalan)}</strong></span>
+                                <span>Toplam: <strong style={{color:"#92400e"}}>{formatTL(hisse.tutar)}</strong></span>
+                                <span style={{color:"#15803d"}}>Odenen: <strong>{formatTL(hisse.odenen||0)}</strong></span>
+                                <span style={{color:kalan>0?"#b91c1c":"#15803d"}}>Kalan: <strong>{formatTL(kalan)}</strong></span>
                               </div>
                               <OdemeInput tutar={hisse.tutar} odenen={hisse.odenen||0} onChange={(v)=>onOdeme(h.id,hisse.id,v)}/>
                             </div>
@@ -865,7 +904,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
         {/* = HAYVAN EKLE = */}
         {sekme==="ekle"&&(
           <div style={{maxWidth:420}}>
-            <h3 style={{color:"#c8861a",marginTop:0,fontFamily:FONT,fontSize:16}}>Yeni Hayvan Ekle</h3>
+            <h3 style={{color:"#8b1a1a",marginTop:0,fontFamily:FONT,fontSize:16}}>Yeni Hayvan Ekle</h3>
             <div style={{display:"flex",flexDirection:"column",gap:11}}>
               <div><label style={S.lbl}>Tür</label>
                 <select value={yeniH.tip} onChange={e=>setYeniH(p=>({...p,tip:e.target.value,maxHisse:e.target.value==="kucukbas"?"1":"7"}))} style={S.sel}>
@@ -886,25 +925,29 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
               <div>
                 <label style={S.lbl}>Toplam Fiyat (TL)</label>
                 <input value={yeniH.fiyat} onChange={e=>numSet("fiyat",e.target.value)} placeholder="350000" inputMode="numeric" style={S.inp}/>
-                <p style={{margin:"3px 0 0",fontSize:10,color:"#9a6640"}}>Nokta/virgül olmadan: 350000</p>
+                <p style={{margin:"3px 0 0",fontSize:10,color:"#6b4423"}}>Nokta/virgül olmadan: 350000</p>
               </div>
               {yeniH.tip==="buyukbas"&&(
                 <div><label style={S.lbl}>Maks Hisse (1-7)</label>
                   <input value={yeniH.maxHisse} onChange={e=>{const v=Math.min(7,Math.max(1,+e.target.value.replace(/\D/g,"")||1));setYeniH(p=>({...p,maxHisse:String(v)}));}} inputMode="numeric" style={S.inp}/>
                 </div>
               )}
-              <div>
-                <label style={S.lbl}> Fotoğraf URL (ImgBB Direct Link)</label>
-                <input value={yeniH.foto} onChange={e=>setYeniH(p=>({...p,foto:e.target.value}))} placeholder="https://i.ibb.co/..." style={S.inp}/>
-                <p style={{margin:"3px 0 0",fontSize:10,color:"#9a6640"}}>imgbb.com &rarr; yükle &rarr; <strong style={{color:"#c8861a"}}>Direct Link</strong> JPG/PNG</p>
-                {yeniH.foto&&<img src={yeniH.foto} alt="" style={{marginTop:6,height:60,borderRadius:6,objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
-              </div>
+              <FotoYukle mevcut={yeniH.foto} onChange={url=>setYeniH(p=>({...p,foto:url}))}/>
               <div>
                 <label style={S.lbl}> Açıklama (opsiyonel)</label>
                 <textarea value={yeniH.aciklama} onChange={e=>setYeniH(p=>({...p,aciklama:e.target.value}))} placeholder="Örn: Sağlıklı, 3 yaşında..." rows={2} style={{...S.inp,resize:"vertical"}}/>
               </div>
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"rgba(139,26,26,.05)",borderRadius:8,border:"1px solid rgba(139,26,26,.15)",cursor:"pointer"}} onClick={()=>setYeniH(p=>({...p,bagisCurban:!p.bagisCurban}))}>
+                <div style={{width:36,height:20,borderRadius:10,background:yeniH.bagisCurban?"#8b1a1a":"rgba(200,134,26,.2)",transition:"background .2s",display:"flex",alignItems:"center",padding:"2px",flexShrink:0}}>
+                  <div style={{width:16,height:16,borderRadius:8,background:"#fff",transform:yeniH.bagisCurban?"translateX(16px)":"translateX(0)",transition:"transform .2s"}}/>
+                </div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#8b1a1a"}}>Bağış Kurbanı</div>
+                  <div style={{fontSize:10,color:"#92400e"}}>Hisse alınamaz — sadece bağış</div>
+                </div>
+              </div>
               {yeniH.fiyat&&+yeniH.maxHisse>0&&(
-                <div style={{background:"rgba(212,160,23,.08)",border:"1px solid rgba(212,160,23,.25)",borderRadius:8,padding:"9px 13px",fontSize:13,color:"#c8861a"}}>
+                <div style={{background:"rgba(212,160,23,.08)",border:"1px solid rgba(212,160,23,.25)",borderRadius:8,padding:"9px 13px",fontSize:13,color:"#92400e"}}>
                    Hisse bedeli: <strong>{formatTL(Math.round(+yeniH.fiyat/+yeniH.maxHisse))}</strong>
                 </div>
               )}
@@ -925,7 +968,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
           const oran=tm>0?Math.round(dm/tm*100):0;
           return (
             <div>
-              <h3 style={{color:"#c8861a",marginTop:0,fontFamily:FONT,fontSize:16}}> Rapor & İstatistik</h3>
+              <h3 style={{color:"#8b1a1a",marginTop:0,fontFamily:FONT,fontSize:16}}> Rapor & İstatistik</h3>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:9,marginBottom:18}}>
                 {[
                   {lbl:"Toplam Hayvan",val:th,renk:"#d4a017"},
@@ -936,7 +979,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                   {lbl:"Tahsilat",val:formatTL(ciro),renk:"#ffe082"},
                 ].map(x=>(
                   <div key={x.lbl} style={{...S.card,padding:"10px 8px",textAlign:"center"}}>
-                    <div style={{fontSize:10,color:"#6b4423",marginBottom:3}}>{x.lbl}</div>
+                    <div style={{fontSize:10,color:"#4a2810",marginBottom:3}}>{x.lbl}</div>
                     <div style={{fontSize:"clamp(14px,3.5vw,18px)",fontWeight:700,color:x.renk,wordBreak:"break-word"}}>{x.val}</div>
                   </div>
                 ))}
@@ -944,7 +987,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
               <div style={{...S.card,padding:"13px 15px",marginBottom:16}}>
                 <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#8a5c30",marginBottom:6}}>
                   <span>Genel Doluluk</span>
-                  <span style={{color:"#c8861a",fontWeight:700}}>%{oran} - {dm}/{tm}</span>
+                  <span style={{color:"#7a2e0e",fontWeight:700}}>%{oran} - {dm}/{tm}</span>
                 </div>
                 <div style={{background:"rgba(200,134,26,.12)",borderRadius:7,height:12,overflow:"hidden"}}>
                   <div style={{width:`${oran}%`,height:"100%",background:"linear-gradient(90deg,#8b1a1a,#d4a017)",borderRadius:7}}/>
@@ -952,7 +995,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
               </div>
               {/* Tablo */}
               <div style={{...S.card,padding:"13px 14px",marginBottom:16,overflowX:"auto"}}>
-                <p style={{margin:"0 0 9px",fontSize:12,color:"#c8861a",fontWeight:700}}>Hayvan Bazlı Doluluk</p>
+                <p style={{margin:"0 0 9px",fontSize:12,color:"#7a2e0e",fontWeight:700}}>Hayvan Bazlı Doluluk</p>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,minWidth:300}}>
                   <thead>
                     <tr style={{borderBottom:"1px solid rgba(212,160,23,.25)"}}>
@@ -967,13 +1010,13 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       const c=h.hisseler.filter(x=>x.durum==="onaylı").reduce((a,x)=>a+x.tutar,0);
                       return (
                         <tr key={h.id} style={{borderBottom:"1px solid rgba(255,255,255,.04)"}}>
-                          <td style={{padding:"6px 7px",color:"#6b4423"}}>{h.kesimSirasi}.</td>
-                          <td style={{padding:"6px 7px",color:"#c8861a",fontWeight:700}}>#{h.numara}</td>
+                          <td style={{padding:"6px 7px",color:"#4a2810"}}>{h.kesimSirasi}.</td>
+                          <td style={{padding:"6px 7px",color:"#7a2e0e",fontWeight:700}}>#{h.numara}</td>
                           <td style={{padding:"6px 7px",color:"#8a5c30"}}>{h.tip==="buyukbas"?"":""}</td>
                           <td style={{padding:"6px 7px",color:"#2d1a08"}}>{h.maxHisse}</td>
                           <td style={{padding:"6px 7px",color:"#4ade80",fontWeight:700}}>{d}</td>
                           <td style={{padding:"6px 7px",color:h.maxHisse-d>0?"#f87171":"#604030",fontWeight:700}}>{h.maxHisse-d}</td>
-                          <td style={{padding:"6px 7px",color:"#c8861a",whiteSpace:"nowrap"}}>{formatTL(c)}</td>
+                          <td style={{padding:"6px 7px",color:"#92400e",whiteSpace:"nowrap"}}>{formatTL(c)}</td>
                         </tr>
                       );
                     })}
@@ -982,8 +1025,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
               </div>
               {/* Excel */}
               <div style={{...S.card,padding:"14px",marginBottom:14}}>
-                <p style={{margin:"0 0 5px",fontSize:12,color:"#c8861a",fontWeight:700}}> Excel / CSV İndir</p>
-                <p style={{margin:"0 0 12px",fontSize:11,color:"#6b4423"}}>Excel veya Google Sheets'te açılır (noktalı virgül ayraçlı).</p>
+                <p style={{margin:"0 0 5px",fontSize:12,color:"#7a2e0e",fontWeight:700}}> Excel / CSV İndir</p>
+                <p style={{margin:"0 0 12px",fontSize:11,color:"#4a2810"}}>Excel veya Google Sheets'te açılır (noktalı virgül ayraçlı).</p>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   <button onClick={()=>excelIndir("hisseler")} style={{...S.solid("#1a3a1a","#4ade80"),padding:"10px",textAlign:"left",fontSize:12}}> Hissedar Listesi</button>
                   <button onClick={()=>excelIndir("hayvanlar")} style={{...S.solid("#1a2a4a","#60a5fa"),padding:"10px",textAlign:"left",fontSize:12}}> Hayvan Özet Listesi</button>
@@ -995,7 +1038,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                 <p style={{margin:"0 0 4px",fontSize:12,fontWeight:700,color:sbHata?"#f87171":"#4ade80"}}>
                   {sbHata?" Supabase bağlantısı yok":" Supabase bağlantısı aktif"}
                 </p>
-                <p style={{margin:0,fontSize:11,color:"#6b4423"}}>
+                <p style={{margin:0,fontSize:11,color:"#4a2810"}}>
                   {sbHata?"Veriler geçici olarak çevrimdışı saklanıyor. Bağlantı gelince otomatik senkronize olur.":"Tüm veriler bulutta güvenle saklanıyor - her cihazdan erişilebilir."}
                 </p>
               </div>

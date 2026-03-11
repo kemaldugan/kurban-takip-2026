@@ -285,12 +285,22 @@ export default function App() {
   };
 
   /* Veri işlemleri */
-  const onayla = (tid)=>{
+  const onayla = (tid, ekBilgi={})=>{
     const t=tRef.current.find(x=>x.id===tid); if(!t) return;
     const h=hRef.current.find(x=>x.id===t.hayvanId);
     const bos=h?h.maxHisse-h.hisseler.filter(x=>x.durum==="onaylı").length:0;
     if(!h||bos<=0){alert("Boş yer kalmadı!");return;}
-    const yh={id:uid(),hayvanId:t.hayvanId,ad:t.ad,telefon:t.telefon,tutar:t.tutar,durum:"onaylı",tarih:zaman()};
+    const yh={
+      id:uid(), hayvanId:t.hayvanId,
+      ad:t.ad, telefon:t.telefon, tutar:t.tutar,
+      odenen: 0,
+      vekalet:   ekBilgi.vekalet||false,
+      teslimat:  ekBilgi.teslimat||"belirtilmedi",
+      acilIrtibat: ekBilgi.acilIrtibat||"",
+      acilTelefon: ekBilgi.acilTelefon||"",
+      not: ekBilgi.not||"",
+      durum:"onaylı", tarih:zaman()
+    };
     setHayvanlar(p=>p.map(x=>x.id===t.hayvanId?{...x,hisseler:[...x.hisseler,yh]}:x));
     setTalepler(p=>p.map(x=>x.id===tid?{...x,durum:"onaylı"}:x));
   };
@@ -640,6 +650,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
   const BOŞ_HFORM = {ad:"",telefon:"",vekalet:false,teslimat:"belirtilmedi",referans:"",acilIrtibat:"",acilTelefon:"",not:""};
 
   const bekleyen = talepler.filter(t=>t.durum==="bekliyor");
+  const [onayForm, setOnayForm] = useState({}); // tid -> {vekalet,teslimat,acilIrtibat,acilTelefon,not}
+  const BOŞ_ONAY = {vekalet:false, teslimat:"belirtilmedi", acilIrtibat:"", acilTelefon:"", not:""};
   const numSet = (key,val)=>setYeniH(p=>({...p,[key]:val.replace(/\D/g,"")}));
   // Ham sayıyı noktalı göster: 350000 → 350.000
   const fiyatGoster = (val) => val ? Number(val).toLocaleString("tr-TR") : "";
@@ -742,22 +754,69 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
               ?<p style={{color:"#604030",fontSize:13}}>Bekleyen talep yok.</p>
               :bekleyen.map(t=>{
                 const h=hayvanlar.find(x=>x.id===t.hayvanId);
+                const of=onayForm[t.id]||BOŞ_ONAY;
+                const setOf=(d)=>setOnayForm(p=>({...p,[t.id]:{...of,...d}}));
                 return (
-                  <div key={t.id} style={{...S.card,padding:"12px 14px",marginBottom:10}}>
+                  <div key={t.id} style={{...S.card,padding:"13px 14px",marginBottom:12}}>
+                    {/* Talep özeti */}
                     <div style={{marginBottom:10}}>
-                      <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}>
+                      <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4,marginBottom:4}}>
                         <span style={{color:"#d4a017",fontWeight:700,fontSize:14}}>#{h?.numara} nolu hayvan</span>
                         <span style={{color:"#604030",fontSize:11}}>{t.tarih}</span>
                       </div>
-                      <div style={{color:"#f5e6c0",fontSize:14,margin:"3px 0"}}>{t.ad}</div>
+                      <div style={{color:"#f5e6c0",fontSize:15,fontWeight:600,marginBottom:2}}>{t.ad}</div>
                       <div style={{display:"flex",gap:12,fontSize:12,color:"#a08060",flexWrap:"wrap"}}>
                         <span>📞 {t.telefon}</span>
                         <span style={{color:"#d4a017"}}>💰 {formatTL(t.tutar)}</span>
                       </div>
                     </div>
+
+                    {/* Onay öncesi bilgi formu */}
+                    <div style={{background:"rgba(212,160,23,.05)",border:"1px solid rgba(212,160,23,.15)",borderRadius:9,padding:"11px",marginBottom:10}}>
+                      <p style={{margin:"0 0 9px",fontSize:11,color:"#d4a017",fontWeight:700}}>📋 Onay Bilgileri</p>
+
+                      {/* Teslimat + Vekalet */}
+                      <div className="hfrow" style={{marginBottom:8}}>
+                        <div>
+                          <label style={S.lbl}>🚚 Teslimat Yeri</label>
+                          <select value={of.teslimat} onChange={e=>setOf({teslimat:e.target.value})} style={S.sel}>
+                            <option value="belirtilmedi">Belirtilmedi</option>
+                            <option value="ev">🏠 Eve Teslim</option>
+                            <option value="arac">🚐 Araçla Teslim</option>
+                            <option value="ciftlik">🐄 Çiftlikte Teslim</option>
+                            <option value="diger">📍 Diğer</option>
+                          </select>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+                          <label style={S.lbl}>📋 Vekalet</label>
+                          <button onClick={()=>setOf({vekalet:!of.vekalet})}
+                            style={{padding:"11px 12px",borderRadius:8,border:`1px solid ${of.vekalet?"#4ade80":"rgba(212,160,23,.28)"}`,background:of.vekalet?"rgba(74,222,128,.12)":"rgba(255,255,255,.06)",color:of.vekalet?"#4ade80":"#806040",cursor:"pointer",fontFamily:FONT,fontSize:13,touchAction:"manipulation"}}>
+                            {of.vekalet?"✓ Alındı":"✗ Alınmadı"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* İlave irtibat */}
+                      <div className="hfrow" style={{marginBottom:8}}>
+                        <div><label style={S.lbl}>🆘 İlave İrtibat Adı</label>
+                          <input value={of.acilIrtibat} onChange={e=>setOf({acilIrtibat:e.target.value})} placeholder="Eş / kardeş adı" style={S.inp}/>
+                        </div>
+                        <div><label style={S.lbl}>📞 İlave İrtibat Tel</label>
+                          <input value={of.acilTelefon} onChange={e=>setOf({acilTelefon:e.target.value})} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/>
+                        </div>
+                      </div>
+
+                      {/* Not */}
+                      <div>
+                        <label style={S.lbl}>📝 Not</label>
+                        <input value={of.not} onChange={e=>setOf({not:e.target.value})} placeholder="Özel not..." style={S.inp}/>
+                      </div>
+                    </div>
+
+                    {/* Onay / Red butonları */}
                     <div className="talep-onay-row" style={{display:"flex",gap:8}}>
-                      <button onClick={()=>onOnayla(t.id)} style={{flex:1,padding:"10px",background:"#14532d",border:"1px solid #4ade80",borderRadius:8,color:"#4ade80",cursor:"pointer",fontFamily:FONT,fontSize:13,fontWeight:600,touchAction:"manipulation"}}>✓ Onayla</button>
                       <button onClick={()=>onReddet(t.id)} style={{flex:1,padding:"10px",background:"#7f1d1d",border:"1px solid #f87171",borderRadius:8,color:"#f87171",cursor:"pointer",fontFamily:FONT,fontSize:13,fontWeight:600,touchAction:"manipulation"}}>✗ Reddet</button>
+                      <button onClick={()=>onOnayla(t.id,of)} style={{flex:2,padding:"10px",background:"#14532d",border:"1px solid #4ade80",borderRadius:8,color:"#4ade80",cursor:"pointer",fontFamily:FONT,fontSize:13,fontWeight:600,touchAction:"manipulation"}}>✓ Onayla & Kaydet</button>
                     </div>
                   </div>
                 );
@@ -873,11 +932,11 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                         </div>
                         {/* Referans & Acil İrtibat */}
                         <div className="hfrow" style={{marginBottom:8}}>
-                          <div><label style={S.lbl}>👤 Referans Kişi</label><input value={hf.referans||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,referans:e.target.value}}))} placeholder="Öneren kişi" style={S.inp}/></div>
-                          <div><label style={S.lbl}>🆘 Acil İrtibat Adı</label><input value={hf.acilIrtibat||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilIrtibat:e.target.value}}))} placeholder="Eş / kardeş" style={S.inp}/></div>
+                          <div><label style={S.lbl}>🆘 İlave İrtibat Adı</label><input value={hf.acilIrtibat||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilIrtibat:e.target.value}}))} placeholder="Eş / kardeş adı" style={S.inp}/></div>
+                          <div><label style={S.lbl}>🆘 İlave İrtibat Adı</label><input value={hf.acilIrtibat||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilIrtibat:e.target.value}}))} placeholder="Eş / kardeş" style={S.inp}/></div>
                         </div>
                         <div style={{marginBottom:8}}>
-                          <label style={S.lbl}>📞 Acil İrtibat Telefonu</label>
+                          <label style={S.lbl}>📞 İlave İrtibat Tel</label>
                           <input value={hf.acilTelefon||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilTelefon:e.target.value}}))} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/>
                         </div>
                         <div style={{marginBottom:10}}>
@@ -915,12 +974,12 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                               <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:hisse.vekalet?"rgba(74,222,128,.1)":"rgba(248,113,113,.08)",border:`1px solid ${hisse.vekalet?"rgba(74,222,128,.3)":"rgba(248,113,113,.2)"}`,color:hisse.vekalet?"#4ade80":"#f87171"}}>
                                 {hisse.vekalet?"📋 Vekalet ✓":"📋 Vekalet ✗"}
                               </span>
-                              {hisse.referans&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(212,160,23,.08)",border:"1px solid rgba(212,160,23,.2)",color:"#d4a017"}}>👤 {hisse.referans}</span>}
+
                             </div>
                             {/* Acil irtibat */}
                             {hisse.acilIrtibat&&(
                               <div style={{fontSize:11,color:"#f87171",marginBottom:6,background:"rgba(248,113,113,.06)",padding:"4px 8px",borderRadius:6}}>
-                                🆘 {hisse.acilIrtibat}{hisse.acilTelefon&&` — ${hisse.acilTelefon}`}
+                                🆘 İlave: {hisse.acilIrtibat}{hisse.acilTelefon&&` — ${hisse.acilTelefon}`}
                               </div>
                             )}
                             {hisse.not&&<div style={{fontSize:11,color:"#a08060",marginBottom:8,fontStyle:"italic"}}>📝 {hisse.not}</div>}
@@ -931,14 +990,21 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                                 <span style={{color:"#4ade80"}}>Ödenen: <strong>{formatTL(hisse.odenen||0)}</strong></span>
                                 <span style={{color:kalan>0?"#f87171":"#4ade80"}}>Kalan: <strong>{formatTL(kalan)}</strong></span>
                               </div>
-                              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                              <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                                 <input
-                                  type="number" placeholder="Ödenen tutar" min="0" max={hisse.tutar}
-                                  defaultValue={hisse.odenen||0}
-                                  onBlur={e=>onOdeme(h.id,hisse.id,e.target.value)}
-                                  style={{flex:1,padding:"7px 10px",background:"rgba(255,255,255,.06)",border:"1px solid rgba(212,160,23,.25)",borderRadius:7,color:"#e8d5a3",fontFamily:FONT,fontSize:13}}
+                                  type="text" inputMode="numeric"
+                                  placeholder="0"
+                                  defaultValue={hisse.odenen ? Number(hisse.odenen).toLocaleString("tr-TR") : ""}
+                                  onFocus={e=>{ e.target.value = hisse.odenen||""; }}
+                                  onBlur={e=>{
+                                    const ham = e.target.value.replace(/\./g,"").replace(/,/g,".").replace(/[^0-9]/g,"");
+                                    const sayi = ham ? Math.min(+ham, hisse.tutar) : 0;
+                                    e.target.value = sayi ? Number(sayi).toLocaleString("tr-TR") : "";
+                                    onOdeme(h.id,hisse.id,sayi);
+                                  }}
+                                  style={{flex:1,minWidth:120,padding:"7px 10px",background:"rgba(255,255,255,.06)",border:"1px solid rgba(212,160,23,.25)",borderRadius:7,color:"#e8d5a3",fontFamily:FONT,fontSize:14}}
                                 />
-                                <span style={{fontSize:10,color:"#604030",whiteSpace:"nowrap"}}>TL gir → odaktan çık</span>
+                                <span style={{fontSize:10,color:"#604030"}}>TL → odaktan çık</span>
                               </div>
                             </div>
                           </div>

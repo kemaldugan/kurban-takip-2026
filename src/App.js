@@ -11,6 +11,12 @@ const uid   = () => Math.random().toString(36).substr(2,9);
 const zaman = () => new Date().toLocaleString("tr-TR");
 const getBos = (h) => h.maxHisse - h.hisseler.filter(x=>x.durum==="onaylı").length;
 
+const WA_YONETICI = "905552553456"; // <-- kendi numaranızla değiştirin
+const waGonder = (tel, mesaj) => {
+  const temizTel = String(tel).replace(/\D/g,"").replace(/^0/,"90");
+  window.open(`https://wa.me/${temizTel}?text=${encodeURIComponent(mesaj)}`,"_blank");
+};
+
 /* = SUPABASE = */
 async function sbOku(key) {
   try {
@@ -44,47 +50,63 @@ const CSS = `
   html{scroll-behavior:smooth;}
   body{margin:0;background:#f5efe6;-webkit-tap-highlight-color:transparent;overflow-x:hidden;}
   input,select,textarea,button{font-family:${FONT};}
-  h1,h2,h3{font-family:${FONT};}
-  100%{transform:translateX(-50%)}}
-  ;font-size:13px;letter-spacing:.8px;}
-  
-  @media(hover:hover){.hkart:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(212,160,23,.2);}}
+  h1,h2,h3,h4{margin:0;font-family:${FONT};}
+
+  /* Kart hover — sadece fare olan cihazlarda */
+  @media(hover:hover){.hkart:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,26,26,.14);}}
   .hkart{transition:transform .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;cursor:pointer;}
 
-  /* Grid: mobilde 1 sütun */
-  .hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
-  @media(max-width:599px){.hgrid{grid-template-columns:1fr;gap:10px;}}
+  /* Hayvan kartı grid */
+  .hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+  @media(max-width:540px){.hgrid{grid-template-columns:1fr;gap:10px;}}
 
   /* Sekme bar */
-  .sbar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid rgba(212,160,23,.2);scrollbar-width:none;}
+  .sbar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
+        border-bottom:2px solid rgba(200,134,26,.15);scrollbar-width:none;background:#fff;}
   .sbar::-webkit-scrollbar{display:none;}
-  .sbtn{flex-shrink:0;padding:11px 15px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:${FONT};font-size:13px;white-space:nowrap;touch-action:manipulation;color:#4a2810;}
+  .sbtn{flex-shrink:0;padding:12px 16px;background:none;border:none;border-bottom:3px solid transparent;
+        cursor:pointer;font-family:${FONT};font-size:13px;font-weight:500;white-space:nowrap;
+        touch-action:manipulation;color:#6b4423;margin-bottom:-2px;}
 
   /* Modallar */
-  .modal-bg{position:fixed;inset:0;background:rgba(60,30,10,.75);display:flex;align-items:center;justify-content:center;z-index:200;padding:10px;}
-  .modal-kart{background:#fdf6ec;border:1px solid #c8861a;border-radius:18px;width:100%;max-width:480px;max-height:94vh;overflow-y:auto;}
-  @media(max-width:500px){.modal-kart{border-radius:14px;max-height:97vh;}}
-  .talep-kart{background:#fdf6ec;border:1px solid #c8861a;border-radius:14px;padding:22px;width:100%;max-width:380px;}
-  @media(max-width:420px){.talep-kart{padding:16px;}}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;
+            justify-content:center;z-index:300;padding:0;}
+  @media(min-width:600px){.modal-bg{align-items:center;padding:16px;}}
+  .modal-kart{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;
+              max-height:92vh;overflow-y:auto;padding:0;}
+  @media(min-width:600px){.modal-kart{border-radius:18px;max-height:88vh;}}
+  .talep-kart{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:440px;
+              max-height:92vh;overflow-y:auto;padding:20px 20px 32px;}
+  @media(min-width:600px){.talep-kart{border-radius:16px;max-height:88vh;}}
 
-  /* Hissedar form satırı */
-  .hfrow{display:flex;gap:8px;flex-wrap:wrap;}
-  .hfrow>div{flex:1;min-width:120px;}
+  /* Genel form satırı */
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:400px){.frow{grid-template-columns:1fr;}}
 
   /* Admin buton grubu */
-  .abtn-grp{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
+  .abtn-grp{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;}
+  @media(max-width:400px){.abtn-grp button{padding:5px 7px !important;font-size:11px !important;}}
 
-  /* Detay grid */
-  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;}
-  @media(max-width:320px){.dgrid{grid-template-columns:1fr;}}
-
-  /* Yönetici butonu header */
-  .ybtn{position:absolute;top:10px;right:10px;}
-  @media(max-width:340px){.ybtn button{font-size:10px !important;padding:4px 8px !important;}}
+  /* Detay grid 2x2 */
+  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
 
   /* Güncelleme formu */
-  .gform{display:flex;flex-direction:column;gap:10px;padding:14px;background:rgba(212,160,23,.05);border-radius:10px;margin-top:12px;border:1px solid rgba(212,160,23,.15);}
+  .gform{display:flex;flex-direction:column;gap:10px;padding:14px;
+         background:#fafaf8;border-radius:10px;margin-top:10px;
+         border:1px solid rgba(200,134,26,.2);}
+
+  /* Talep onay buton satırı */
+  .onay-row{display:flex;gap:8px;margin-top:4px;}
+  .onay-row button{flex:1;min-width:0;}
+
+  /* İstatistik bar sayıları */
+  .stat-bar{display:flex;justify-content:space-around;gap:4px;}
+
+  /* Genel içerik sarıcı */
+  .icerik{max-width:860px;margin:0 auto;padding:14px 12px 40px;}
+  @media(max-width:480px){.icerik{padding:10px 10px 32px;}}
 `;
+
 
 /* = STİLLER = */
 const S = {
@@ -366,7 +388,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
       </div>
 
 
-      <div style={{maxWidth:880,margin:"0 auto",padding:"14px 10px"}}>
+      <div className="icerik">
         {/* FİLTRE */}
         <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
           {[["hepsi","Tümü"],["buyukbas","Büyükbaş"],["kucukbas","Küçükbaş"],["bagis","🤲 Bağış"]].map(([k,l])=>(
@@ -450,9 +472,10 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
         return (
           <div className="modal-bg" onClick={()=>setDetay(null)}>
             <div className="modal-kart" onClick={e=>e.stopPropagation()}>
+              <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}><div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,.12)"}}/></div>
               {h.foto
-                ?<div style={{height:"clamp(160px,40vw,210px)",overflow:"hidden",borderRadius:"18px 18px 0 0"}}><img src={h.foto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/></div>
-                :<div style={{height:80,background:"rgba(200,134,26,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:48,borderRadius:"18px 18px 0 0"}}>{h.tip==="buyukbas"?"":h.kategori==="koyun"?"":""}</div>
+                ?<div style={{height:"clamp(160px,40vw,210px)",overflow:"hidden"}}><img src={h.foto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/></div>
+                :<div style={{height:80,background:"#f5efe6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:48}}>{h.tip==="buyukbas"?"":h.kategori==="koyun"?"":""}</div>
               }
               <div style={{padding:"16px 18px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -517,6 +540,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
       {talepModal&&(
         <div className="modal-bg" onClick={()=>setTalepModal(null)}>
           <div className="talep-kart" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,.12)"}}/></div>
             <h3 style={{margin:"0 0 3px",color:"#92400e",fontFamily:FONT,fontSize:"clamp(15px,4vw,18px)"}}> Hisse Talebi</h3>
             <p style={{margin:"0 0 14px",color:"#4a2810",fontSize:"clamp(11px,3vw,13px)"}}>
               #{talepModal.numara} nolu hayvan - {formatTL(talepModal.tip==="buyukbas"?Math.round(talepModal.fiyat/talepModal.maxHisse):talepModal.fiyat)}
@@ -649,8 +673,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
       {/* Header */}
       <div style={{background:"linear-gradient(90deg,#6b1515,#8b1a1a,#6b1515)",borderBottom:"2px solid #c8861a",padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
         <div style={{minWidth:0}}>
-          <h1 style={{margin:0,fontSize:"clamp(13px,3.5vw,17px)",color:"#92400e",fontFamily:FONT}}> Yönetici Paneli</h1>
-          <p style={{margin:0,fontSize:10,color:"#4a2810"}}>Murat Yalvaç Öğrenci Yurdu - 2026</p>
+          <h1 style={{margin:0,fontSize:"clamp(13px,3.5vw,17px)",color:"#fff",fontFamily:FONT}}>Yönetici Paneli</h1>
+          <p style={{margin:0,fontSize:10,color:"rgba(255,255,255,.7)"}}>Murat Yalvaç Öğrenci Yurdu</p>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0}}>
           {bekleyen.length>0&&<span style={{background:"#c0392b",color:"#fff",borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{bekleyen.length}</span>}
@@ -666,7 +690,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
         ))}
       </div>
 
-      <div style={{maxWidth:860,margin:"0 auto",padding:"14px 10px"}}>
+      <div className="icerik">
 
         {/* = TALEPLER = */}
         {sekme==="talepler"&&(
@@ -693,7 +717,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                     </div>
                     <div style={{background:"rgba(200,134,26,.07)",border:"1px solid rgba(200,134,26,.2)",borderRadius:9,padding:"11px",marginBottom:10}}>
                       <p style={{margin:"0 0 9px",fontSize:11,color:"#7a2e0e",fontWeight:700}}>Onay Bilgileri</p>
-                      <div className="hfrow" style={{marginBottom:8}}>
+                      <div className="frow" style={{marginBottom:8}}>
                         <div>
                           <label style={S.lbl}>Teslimat Yeri</label>
                           <select value={of.teslimat} onChange={e=>setOf({teslimat:e.target.value})} style={S.sel}>
@@ -712,7 +736,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                           </button>
                         </div>
                       </div>
-                      <div className="hfrow" style={{marginBottom:8}}>
+                      <div className="frow" style={{marginBottom:8}}>
                         <div><label style={S.lbl}>Ilave Irtibat Adi</label>
                           <input value={of.acilIrtibat} onChange={e=>setOf({acilIrtibat:e.target.value})} placeholder="Es / kardes" style={S.inp}/>
                         </div>
@@ -725,7 +749,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                         <input value={of.not} onChange={e=>setOf({not:e.target.value})} placeholder="Ozel not..." style={S.inp}/>
                       </div>
                     </div>
-                    <div className="talep-onay-row" style={{display:"flex",gap:8}}>
+                    <div className="onay-row">
                       <button onClick={()=>onReddet(t.id)} style={{flex:1,padding:"10px",background:"#7f1d1d",border:"1px solid #f87171",borderRadius:8,color:"#f87171",cursor:"pointer",fontFamily:FONT,fontSize:13,fontWeight:600,touchAction:"manipulation"}}>Reddet</button>
                       <button onClick={()=>onOnayla(t.id,of)} style={{flex:2,padding:"10px",background:"#14532d",border:"1px solid #4ade80",borderRadius:8,color:"#4ade80",cursor:"pointer",fontFamily:FONT,fontSize:13,fontWeight:600,touchAction:"manipulation"}}>Onayla ve Kaydet</button>
                     </div>
@@ -816,11 +840,11 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       {/* HİSSEDAR EKLE */}
                       <div style={{background:"rgba(200,134,26,.07)",border:"1px solid rgba(200,134,26,.2)",borderRadius:9,padding:"12px",marginBottom:12,marginTop:isDuz?12:0}}>
                         <p style={{margin:"0 0 10px",fontSize:12,color:"#7a2e0e",fontWeight:700}}>Hissedar Ekle ({bos} bos yer)</p>
-                        <div className="hfrow" style={{marginBottom:8}}>
+                        <div className="frow" style={{marginBottom:8}}>
                           <div><label style={S.lbl}>Ad Soyad *</label><input value={hf.ad||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,ad:e.target.value}}))} placeholder="Ahmet Yilmaz" style={S.inp}/></div>
                           <div><label style={S.lbl}>Telefon *</label><input value={hf.telefon||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,telefon:e.target.value}}))} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/></div>
                         </div>
-                        <div className="hfrow" style={{marginBottom:8}}>
+                        <div className="frow" style={{marginBottom:8}}>
                           <div>
                             <label style={S.lbl}>Teslimat</label>
                             <select value={hf.teslimat||"belirtilmedi"} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,teslimat:e.target.value}}))} style={S.sel}>
@@ -839,7 +863,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                             </button>
                           </div>
                         </div>
-                        <div className="hfrow" style={{marginBottom:8}}>
+                        <div className="frow" style={{marginBottom:8}}>
                           <div><label style={S.lbl}>Ilave Irtibat Adi</label><input value={hf.acilIrtibat||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilIrtibat:e.target.value}}))} placeholder="Es / kardes" style={S.inp}/></div>
                           <div><label style={S.lbl}>Ilave Irtibat Tel</label><input value={hf.acilTelefon||""} onChange={e=>setHForm(p=>({...p,[h.id]:{...hf,acilTelefon:e.target.value}}))} placeholder="0555 000 00 00" inputMode="tel" style={S.inp}/></div>
                         </div>

@@ -520,7 +520,7 @@ function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
           style={{...S.inp,textAlign:"center",border:`1px solid ${err?"#f87171":"rgba(212,160,23,.3)"}`}}/>
         {err&&<p style={{color:"#f87171",fontSize:12,margin:"6px 0 0"}}> Hatalı şifre</p>}
         <button onClick={onGiris} style={{marginTop:12,width:"100%",...S.solid(),padding:13,fontSize:15}}>Giriş Yap</button>
-        <button onClick={onGeri} style={{marginTop:6,width:"100%",background:"transparent",border:"none",color:"#6b4423",cursor:"pointer",fontFamily:FONT,fontSize:13,padding:"8px",touchAction:"manipulation"}}><- Geri Dön</button>
+        <button onClick={onGeri} style={{marginTop:6,width:"100%",background:"transparent",border:"none",color:"#6b4423",cursor:"pointer",fontFamily:FONT,fontSize:13,padding:"8px",touchAction:"manipulation"}}>&larr; Geri Dön</button>
       </div>
     </div>
   );
@@ -896,7 +896,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
               <div>
                 <label style={S.lbl}> Fotoğraf URL (ImgBB Direct Link)</label>
                 <input value={yeniH.foto} onChange={e=>setYeniH(p=>({...p,foto:e.target.value}))} placeholder="https://i.ibb.co/..." style={S.inp}/>
-                <p style={{margin:"3px 0 0",fontSize:10,color:"#9a6640"}}>imgbb.com -> yükle -> <strong style={{color:"#c8861a"}}>Direct Link</strong>  JPG/PNG</p>
+                <p style={{margin:"3px 0 0",fontSize:10,color:"#9a6640"}}>imgbb.com &rarr; yükle &rarr; <strong style={{color:"#c8861a"}}>Direct Link</strong> JPG/PNG</p>
                 {yeniH.foto&&<img src={yeniH.foto} alt="" style={{marginTop:6,height:60,borderRadius:6,objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
               </div>
               <div>

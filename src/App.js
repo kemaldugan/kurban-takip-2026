@@ -73,7 +73,7 @@ const CSS = `
 
   /* Sekme bar */
   .sbar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
-        border-bottom:2px solid rgba(200,134,26,.15);scrollbar-width:none;background:#fff;}
+        border-bottom:2px solid rgba(122,20,20,.15);scrollbar-width:none;background:#f5efe6;}
   .sbar::-webkit-scrollbar{display:none;}
   .sbtn{flex-shrink:0;padding:12px 16px;background:none;border:none;border-bottom:3px solid transparent;
         cursor:pointer;font-family:${FONT};font-size:13px;font-weight:500;white-space:nowrap;
@@ -86,9 +86,12 @@ const CSS = `
   .modal-kart{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;
               max-height:92vh;overflow-y:auto;padding:0;}
   @media(min-width:600px){.modal-kart{border-radius:18px;max-height:88vh;}}
-  .talep-kart{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:440px;
-              max-height:92vh;overflow-y:auto;padding:20px 20px 32px;}
-  @media(min-width:600px){.talep-kart{border-radius:16px;max-height:88vh;}}
+  /* Talep formu - mobilde tam ekran */
+  .talep-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+  @media(min-width:600px){.talep-bg{align-items:center;}}
+  .talep-kart{background:#fdf6ec;width:100%;max-width:480px;
+              height:100%;max-height:100%;overflow-y:auto;padding:0;display:flex;flex-direction:column;}
+  @media(min-width:600px){.talep-kart{height:auto;max-height:90vh;border-radius:16px;}}
 
   /* Genel form satırı */
   .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -301,6 +304,7 @@ export default function App() {
   const guncH     = (id,d)    => setHayvanlar(p=>p.map(x=>x.id===id?{...x,...d}:x));
   const silH      = (id)      => { if(window.confirm("Bu hayvanı silmek istiyor musunuz?")) setHayvanlar(p=>p.filter(x=>x.id!==id)); };
   const silHisse  = (hid,xid) => setHayvanlar(p=>p.map(h=>h.id===hid?{...h,hisseler:h.hisseler.filter(x=>x.id!==xid)}:h));
+  const talepTemizle = () => setTalepler(p=>p.filter(x=>x.durum==="bekliyor"));
   const durumH    = (id,d)    => setHayvanlar(p=>p.map(x=>x.id===id?{...x,durum:d}:x));
 
   const hisseDirekt = (hayvanId, bilgi)=>{
@@ -354,7 +358,7 @@ export default function App() {
       <style>{CSS}</style>
       {sbHata&&<div style={{background:"#7f1d1d",color:"#fca5a5",fontSize:11,textAlign:"center",padding:"5px",fontFamily:FONT}}> Bağlantı sorunu - veriler geçici olarak çevrimdışı saklanıyor</div>}
       {view==="login" && <LoginPanel sifre={sifre} setSifre={setSifre} err={sifreErr} onGiris={giris} onGeri={()=>setView("public")}/>}
-      {view==="admin" && admin && <AdminPanel hayvanlar={hayvanlar} talepler={talepler} onOnayla={onayla} onReddet={reddet} onEkleH={ekleH} onGuncH={guncH} onSilH={silH} onSilHisse={silHisse} onDurum={durumH} onHisseDirekt={hisseDirekt} onOdeme={odemeGuncelle} onCikis={()=>{setAdmin(false);setView("public");}} onYenile={yenile} sbHata={sbHata}/>}
+      {view==="admin" && admin && <AdminPanel hayvanlar={hayvanlar} talepler={talepler} onOnayla={onayla} onReddet={reddet} onEkleH={ekleH} onGuncH={guncH} onSilH={silH} onSilHisse={silHisse} onDurum={durumH} onHisseDirekt={hisseDirekt} onOdeme={odemeGuncelle} onCikis={()=>{setAdmin(false);setView("public");}} onYenile={yenile} onTalepTemizle={talepTemizle} sbHata={sbHata}/>}
       {(view==="public"||(view==="admin"&&!admin)) && <PublicPanel hayvanlar={hayvanlar} talepler={talepler} onTalep={talepGonder} onAdmin={()=>setView("login")}/>}
     </>
   );
@@ -372,7 +376,15 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
   const [gonderiyor, setGonderiyor] = useState(false);
 
   const aktif = hayvanlar
-    .filter(h=>h.durum==="aktif"&&getBos(h)>0&&(filtre==="hepsi"||h.tip===filtre))
+    .filter(h=>{
+      if(h.durum!=="aktif") return false;
+      if(!h.bagisCurban && getBos(h)<=0) return false;
+      if(filtre==="hepsi") return true;
+      if(filtre==="bagis") return h.bagisCurban;
+      if(filtre==="buyukbas") return h.tip==="buyukbas"&&!h.bagisCurban;
+      if(filtre==="kucukbas") return h.tip==="kucukbas"&&!h.bagisCurban;
+      return true;
+    })
     .sort((a,b)=>a.kesimSirasi-b.kesimSirasi);
 
   const toast = (tip,metin)=>{ setMesaj({tip,metin}); setTimeout(()=>setMesaj(null),5000); };
@@ -396,29 +408,22 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
   return (
     <div style={S.page}>
       {/* HEADER */}
-      <div style={{background:"#fff",borderBottom:"1px solid rgba(200,134,26,.18)",position:"relative",padding:"0"}}>
-        <div style={{maxWidth:880,margin:"0 auto",padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:44,height:44,borderRadius:12,background:"linear-gradient(135deg,#8b1a1a,#c0392b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🐄</div>
-          <div style={{flex:1}}>
-            <div style={{fontWeight:700,fontSize:"clamp(14px,4vw,18px)",color:"#1a0a00",letterSpacing:.2,lineHeight:1.1}}>Murat Yalvaç Öğrenci Yurdu</div>
-            <div style={{fontSize:"clamp(10px,2.5vw,12px)",color:"#92400e",marginTop:1}}>Kurban Organizasyonu 2026</div>
-          </div>
-          <button onClick={onAdmin} style={{background:"#f5efe6",border:"1px solid rgba(200,134,26,.3)",borderRadius:8,color:"#8b1a1a",fontSize:12,fontWeight:600,padding:"7px 13px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation",flexShrink:0,whiteSpace:"nowrap"}}>⚙ Yönetici</button>
-        </div>
-        {/* İSTATİSTİK BAR */}
-        <div style={{background:"linear-gradient(90deg,#7a1a1a,#9b1c1c,#7a1a1a)",padding:"10px 16px"}}>
-          <div style={{maxWidth:880,margin:"0 auto",display:"flex",justifyContent:"space-around",gap:8}}>
-            {[
-              {lbl:"Toplam Hayvan",val:hayvanlar.filter(h=>h.durum==="aktif").length,ic:"🐄"},
-              {lbl:"Dolu Hisse",val:hayvanlar.reduce((a,h)=>a+h.hisseler.filter(x=>x.durum==="onaylı").length,0),ic:"✅"},
-              {lbl:"Boş Hisse",val:hayvanlar.reduce((a,h)=>a+(h.durum==="aktif"?getBos(h):0),0),ic:"🔓"},
-            ].map(s=>(
-              <div key={s.lbl} style={{textAlign:"center",flex:1}}>
-                <div style={{fontSize:"clamp(18px,5vw,26px)",fontWeight:700,color:"#fff",lineHeight:1}}>{s.val}</div>
-                <div style={{fontSize:"clamp(9px,2vw,11px)",color:"rgba(255,255,255,.7)",marginTop:2}}>{s.lbl}</div>
-              </div>
-            ))}
-          </div>
+      <div style={{background:"linear-gradient(180deg,#6b1010,#8b1a1a)",borderBottom:"3px solid #c8861a",position:"relative",padding:"18px 16px 14px",textAlign:"center"}}>
+        <button onClick={onAdmin} style={{position:"absolute",top:12,right:12,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,color:"#fff8f0",fontSize:11,fontWeight:600,padding:"6px 12px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation",whiteSpace:"nowrap"}}>⚙ Yönetici</button>
+        <div style={{fontSize:"clamp(28px,7vw,40px)",lineHeight:1,marginBottom:6}}>🐄</div>
+        <h1 style={{margin:"0 0 2px",fontSize:"clamp(15px,4vw,22px)",fontWeight:700,color:"#fff8f0",letterSpacing:1,fontFamily:FONT}}>MURAT YALVAÇ ÖĞRENCİ YURDU</h1>
+        <div style={{fontSize:"clamp(10px,2.5vw,13px)",color:"rgba(255,220,180,.8)",letterSpacing:2,marginBottom:12}}>KURBAN ORGANİZASYONU 2026</div>
+        <div style={{display:"flex",justifyContent:"center",gap:"clamp(16px,6vw,48px)"}}>
+          {[
+            {lbl:"Hayvan",val:hayvanlar.filter(h=>h.durum==="aktif").length},
+            {lbl:"Dolu Hisse",val:hayvanlar.reduce((a,h)=>a+h.hisseler.filter(x=>x.durum==="onaylı").length,0)},
+            {lbl:"Boş Hisse",val:hayvanlar.reduce((a,h)=>a+(h.durum==="aktif"?getBos(h):0),0)},
+          ].map(s=>(
+            <div key={s.lbl} style={{textAlign:"center"}}>
+              <div style={{fontSize:"clamp(20px,5.5vw,30px)",fontWeight:700,color:"#fff",lineHeight:1}}>{s.val}</div>
+              <div style={{fontSize:"clamp(9px,2.2vw,11px)",color:"rgba(255,220,180,.75)",marginTop:3,letterSpacing:.5}}>{s.lbl}</div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -492,7 +497,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
 
       {/* TOAST */}
       {mesaj&&(
-        <div style={{position:"fixed",bottom:16,left:"50%",transform:"translateX(-50%)",background:mesaj.tip==="ok"?"#14532d":"#991b1b",border:`1px solid ${mesaj.tip==="ok"?"#4ade80":"#f87171"}`,color:"#fff",padding:"11px 18px",borderRadius:10,maxWidth:"92vw",textAlign:"center",zIndex:400,fontSize:"clamp(11px,3vw,13px)",boxShadow:"0 4px 20px rgba(0,0,0,.6)",wordBreak:"break-word"}}>
+        <div style={{position:"fixed",bottom:"max(16px,env(safe-area-inset-bottom))",left:"50%",transform:"translateX(-50%)",background:mesaj.tip==="ok"?"#14532d":"#991b1b",border:`1px solid ${mesaj.tip==="ok"?"#4ade80":"#f87171"}`,color:"#fff",padding:"11px 18px",borderRadius:10,maxWidth:"92vw",textAlign:"center",zIndex:400,fontSize:"clamp(11px,3vw,13px)",boxShadow:"0 4px 20px rgba(0,0,0,.6)",wordBreak:"break-word"}}>
           {mesaj.metin}
         </div>
       )}
@@ -571,30 +576,50 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
         );
       })()}
 
-      {/* TALEP MODAL */}
+      {/* TALEP MODAL - TAM EKRAN */}
       {talepModal&&(
-        <div className="modal-bg" onClick={()=>setTalepModal(null)}>
+        <div className="talep-bg" onClick={()=>setTalepModal(null)}>
           <div className="talep-kart" onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,.12)"}}/></div>
-            <h3 style={{margin:"0 0 3px",color:"#92400e",fontFamily:FONT,fontSize:"clamp(15px,4vw,18px)"}}> Hisse Talebi</h3>
-            <p style={{margin:"0 0 14px",color:"#4a2810",fontSize:"clamp(11px,3vw,13px)"}}>
-              #{talepModal.numara} nolu hayvan - {formatTL(talepModal.tip==="buyukbas"?Math.round(talepModal.fiyat/talepModal.maxHisse):talepModal.fiyat)}
-            </p>
-            <div style={{marginBottom:11}}>
-              <label style={S.lbl}>Ad Soyad *</label>
-              <input value={form.ad} onChange={e=>setForm(v=>({...v,ad:e.target.value}))} placeholder="Ahmet Yılmaz" style={S.inp}/>
+            {/* Sabit header */}
+            <div style={{background:"linear-gradient(135deg,#7a1a1a,#9b1c1c)",padding:"16px 18px 14px",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                <span style={{color:"rgba(255,255,255,.7)",fontSize:11}}>Hisse Talebi</span>
+                <button onClick={()=>setTalepModal(null)} style={{background:"rgba(255,255,255,.15)",border:"none",borderRadius:20,color:"#fff",fontSize:18,width:30,height:30,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation",flexShrink:0,padding:0}}>×</button>
+              </div>
+              <div style={{color:"#fff",fontWeight:700,fontSize:"clamp(16px,4.5vw,20px)"}}>#{talepModal.numara} Nolu Hayvan</div>
+              <div style={{color:"rgba(255,255,255,.85)",fontSize:"clamp(13px,3.5vw,16px)",marginTop:2,fontWeight:600}}>
+                {formatTL(talepModal.tip==="buyukbas"?Math.round(talepModal.fiyat/talepModal.maxHisse):talepModal.fiyat)} / hisse
+              </div>
             </div>
-            <div style={{marginBottom:11}}>
-              <label style={S.lbl}>Telefon *</label>
-              <input value={form.telefon} onChange={e=>setForm(v=>({...v,telefon:e.target.value}))} placeholder="0555 123 45 67" inputMode="tel" style={S.inp}/>
+            {/* Kaydırılabilir form */}
+            <div style={{flex:1,overflow:"auto",padding:"20px 18px",display:"flex",flexDirection:"column",gap:14}}>
+              <div>
+                <label style={{...S.lbl,fontSize:13,marginBottom:6}}>Ad Soyad *</label>
+                <input value={form.ad} onChange={e=>setForm(v=>({...v,ad:e.target.value}))}
+                  placeholder="Ahmet Yılmaz"
+                  style={{...S.inp,fontSize:16,padding:"14px 14px",borderRadius:10}}
+                  autoComplete="name"/>
+              </div>
+              <div>
+                <label style={{...S.lbl,fontSize:13,marginBottom:6}}>Telefon *</label>
+                <input value={form.telefon} onChange={e=>setForm(v=>({...v,telefon:e.target.value}))}
+                  placeholder="0555 123 45 67" inputMode="tel"
+                  style={{...S.inp,fontSize:16,padding:"14px 14px",borderRadius:10}}
+                  autoComplete="tel"/>
+              </div>
+              <div style={{background:"#fdf0e0",border:"1px solid rgba(200,134,26,.25)",borderRadius:10,padding:"12px 14px",fontSize:13,color:"#92400e",lineHeight:1.5}}>
+                Talebiniz yönetici onayına gönderilecek. Onay sonrası WhatsApp ile bildirim alacaksınız.
+              </div>
             </div>
-            <div style={{background:"rgba(200,134,26,.1)",border:"1px solid rgba(200,134,26,.2)",borderRadius:8,padding:"9px 12px",marginBottom:14,fontSize:"clamp(11px,3vw,13px)",color:"#92400e"}}>
-              i Talebiniz yönetici onayına gönderilecek. Onay sonrası iletişime geçilecektir.
-            </div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setTalepModal(null)} style={{flex:1,...S.btn("#604030"),color:"#8a5c30"}}>İptal</button>
-              <button onClick={gonder} disabled={gonderiyor} style={{flex:2,...S.solid(),opacity:gonderiyor?.7:1}}>
-                {gonderiyor?"Gönderiliyor...":" Talep Gönder"}
+            {/* Sabit footer butonlar */}
+            <div style={{padding:"14px 18px 28px",borderTop:"1px solid rgba(200,134,26,.15)",flexShrink:0,display:"flex",gap:10,background:"#fdf6ec"}}>
+              <button onClick={()=>setTalepModal(null)}
+                style={{flex:1,padding:"14px",background:"transparent",border:"1px solid rgba(200,134,26,.4)",borderRadius:10,color:"#8a5c30",cursor:"pointer",fontFamily:FONT,fontSize:14,fontWeight:500,touchAction:"manipulation"}}>
+                İptal
+              </button>
+              <button onClick={gonder} disabled={gonderiyor}
+                style={{flex:2,padding:"14px",background:gonderiyor?"#aaa":"linear-gradient(90deg,#7a1a1a,#b91c1c)",border:"none",borderRadius:10,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:15,touchAction:"manipulation"}}>
+                {gonderiyor?"Gönderiliyor...":"Talep Gönder"}
               </button>
             </div>
           </div>
@@ -610,12 +635,12 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
 function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
   return (
     <div style={{...S.page,display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:16}}>
-      <div style={{background:"linear-gradient(160deg,#150a02,#0e0601)",border:"1px solid #c8861a",borderRadius:18,padding:"clamp(24px,6vw,36px) clamp(18px,5vw,28px)",width:"100%",maxWidth:330,textAlign:"center"}}>
-        <div style={{fontSize:36,marginBottom:10}}></div>
-        <h2 style={{color:"#92400e",margin:"0 0 4px",fontFamily:FONT}}>Yönetici Girişi</h2>
-        <p style={{color:"#4a2810",fontSize:13,margin:"0 0 18px"}}>Şifreyi girerek devam edin</p>
+      <div style={{background:"linear-gradient(160deg,#6b1010,#8b1a1a)",border:"3px solid #c8861a",borderRadius:18,padding:"clamp(24px,6vw,36px) clamp(18px,5vw,28px)",width:"100%",maxWidth:330,textAlign:"center"}}>
+        <div style={{fontSize:40,marginBottom:10}}>🐄</div>
+        <h2 style={{color:"#fff8f0",margin:"0 0 4px",fontFamily:FONT}}>Yönetici Girişi</h2>
+        <p style={{color:"rgba(255,220,180,.8)",fontSize:13,margin:"0 0 18px"}}>Şifreyi girerek devam edin</p>
         <input type="password" value={sifre} onChange={e=>setSifre(e.target.value)} onKeyDown={e=>e.key==="Enter"&&onGiris()} placeholder="Şifre"
-          style={{...S.inp,textAlign:"center",border:`1px solid ${err?"#f87171":"rgba(212,160,23,.3)"}`}}/>
+          style={{...S.inp,textAlign:"center",letterSpacing:3,border:`2px solid ${err?"#f87171":"rgba(255,200,100,.4)"}`,background:"rgba(255,255,255,.95)"}}/>
         {err&&<p style={{color:"#f87171",fontSize:12,margin:"6px 0 0"}}> Hatalı şifre</p>}
         <button onClick={onGiris} style={{marginTop:12,width:"100%",...S.solid(),padding:13,fontSize:15}}>Giriş Yap</button>
         <button onClick={onGeri} style={{marginTop:6,width:"100%",background:"transparent",border:"none",color:"#4a2810",cursor:"pointer",fontFamily:FONT,fontSize:13,padding:"8px",touchAction:"manipulation"}}>&larr; Geri Dön</button>
@@ -627,7 +652,7 @@ function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
 /* =
    ADMİN PANELİ
 = */
-function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH,onSilHisse,onDurum,onHisseDirekt,onOdeme,onCikis,onYenile,sbHata}) {
+function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH,onSilHisse,onDurum,onHisseDirekt,onOdeme,onCikis,onYenile,onTalepTemizle,sbHata}) {
   const [sekme,   setSekme]   = useState("talepler");
   const [yeniH,   setYeniH]   = useState({tip:"buyukbas",kategori:"koyun",numara:"",kesimSirasi:"",fiyat:"",maxHisse:"7",foto:"",aciklama:"",bagisCurban:false});
   const [acik,    setAcik]    = useState(null);
@@ -793,7 +818,15 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                 );
               })
             }
-            <h3 style={{color:"#4a2810",marginTop:20,fontFamily:FONT,fontSize:14}}>Geçmiş Talepler</h3>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:20,marginBottom:8}}>
+              <h3 style={{color:"#4a2810",margin:0,fontFamily:FONT,fontSize:14}}>Geçmiş Talepler ({talepler.filter(t=>t.durum!=="bekliyor").length})</h3>
+              {talepler.filter(t=>t.durum!=="bekliyor").length>0&&(
+                <button onClick={()=>{if(window.confirm("Tüm geçmiş talepler silinsin mi?")) onTalepTemizle();}}
+                  style={{background:"rgba(127,29,29,.1)",border:"1px solid rgba(248,113,113,.3)",borderRadius:6,color:"#b91c1c",fontSize:11,padding:"4px 10px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation"}}>
+                  Temizle
+                </button>
+              )}
+            </div>
             {talepler.filter(t=>t.durum!=="bekliyor").length===0
               ?<p style={{color:"#6b4423",fontSize:12}}>Geçmiş talep yok.</p>
               :talepler.filter(t=>t.durum!=="bekliyor").slice().reverse().map(t=>{
@@ -801,8 +834,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                 return (
                   <div key={t.id} style={{background:"#faf4eb",border:"1px solid rgba(200,134,26,.12)",borderRadius:8,padding:"8px 11px",marginBottom:5,fontSize:12}}>
                     <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}>
-                      <span>#{h?.numara} - {t.ad} - {t.telefon}</span>
-                      <span style={{color:t.durum==="onaylı"?"#4ade80":"#f87171",fontWeight:600}}>{t.durum==="onaylı"?" Onaylı":" Reddedildi"}</span>
+                      <span style={{color:"#2d1a08"}}>#{h?.numara||"?"} - {t.ad} - {t.telefon}</span>
+                      <span style={{color:t.durum==="onaylı"?"#15803d":"#dc2626",fontWeight:600}}>{t.durum==="onaylı"?"Onaylı":"Reddedildi"}</span>
                     </div>
                     <div style={{color:"#6b4423",marginTop:2}}>{formatTL(t.tutar)} - {t.tarih}</div>
                   </div>
@@ -840,14 +873,25 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                       </div>
                     </div>
                     <div className="abtn-grp">
-                      <button onClick={()=>{setAcik(isAcik?null:h.id);setDuzEdit(null);}} style={{...S.btn(),padding:"5px 10px",fontSize:12}}>{isAcik?"=":"="}</button>
+                      <button onClick={()=>{setAcik(isAcik?null:h.id);setDuzEdit(null);}}
+                        style={{padding:"6px 10px",border:`1px solid ${isAcik?"#8b1a1a":"rgba(200,134,26,.4)"}`,borderRadius:7,background:isAcik?"#8b1a1a":"transparent",color:isAcik?"#fff":"#8b4a10",cursor:"pointer",fontFamily:FONT,fontSize:12,touchAction:"manipulation",whiteSpace:"nowrap"}}>
+                        {isAcik?"Kapat":"Detay"}
+                      </button>
                       <button onClick={()=>{
                         setDuzEdit(isDuz?null:h.id);
-                        setDuzForm({numara:String(h.numara),kesimSirasi:String(h.kesimSirasi),fiyat:String(h.fiyat),maxHisse:String(h.maxHisse),foto:h.foto||"",aciklama:h.aciklama||""});
+                        setDuzForm({numara:String(h.numara),kesimSirasi:String(h.kesimSirasi),fiyat:String(h.fiyat),maxHisse:String(h.maxHisse),foto:h.foto||"",aciklama:h.aciklama||"",bagisCurban:h.bagisCurban||false});
                         setAcik(h.id);
-                      }} style={{...S.btn("#60a5fa"),padding:"5px 10px",fontSize:12}}></button>
-                      <button onClick={()=>onDurum(h.id,h.durum==="aktif"?"pasif":"aktif")} style={{...S.btn(h.durum==="aktif"?"#f87171":"#4ade80"),padding:"5px 10px",fontSize:12}}>{h.durum==="aktif"?"Pasif":"Aktif"}</button>
-                      <button onClick={()=>onSilH(h.id)} style={{...S.btn("#f87171"),padding:"5px 10px",fontSize:12,background:"rgba(248,113,113,.1)"}}></button>
+                      }} style={{padding:"6px 10px",border:"1px solid rgba(99,163,250,.5)",borderRadius:7,background:"rgba(99,163,250,.1)",color:"#1d4ed8",cursor:"pointer",fontFamily:FONT,fontSize:12,touchAction:"manipulation",whiteSpace:"nowrap"}}>
+                        Düzenle
+                      </button>
+                      <button onClick={()=>onDurum(h.id,h.durum==="aktif"?"pasif":"aktif")}
+                        style={{padding:"6px 10px",border:`1px solid ${h.durum==="aktif"?"rgba(248,113,113,.5)":"rgba(74,222,128,.5)"}`,borderRadius:7,background:h.durum==="aktif"?"rgba(248,113,113,.1)":"rgba(74,222,128,.1)",color:h.durum==="aktif"?"#dc2626":"#15803d",cursor:"pointer",fontFamily:FONT,fontSize:12,touchAction:"manipulation",whiteSpace:"nowrap"}}>
+                        {h.durum==="aktif"?"Pasif Yap":"Aktif Yap"}
+                      </button>
+                      <button onClick={()=>onSilH(h.id)}
+                        style={{padding:"6px 10px",border:"1px solid rgba(248,113,113,.4)",borderRadius:7,background:"rgba(248,113,113,.1)",color:"#dc2626",cursor:"pointer",fontFamily:FONT,fontSize:12,touchAction:"manipulation",whiteSpace:"nowrap"}}>
+                        Sil
+                      </button>
                     </div>
                   </div>
 

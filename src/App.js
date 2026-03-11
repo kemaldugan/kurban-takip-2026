@@ -27,11 +27,22 @@ async function sbOku(key) {
   } catch { return null; }
 }
 async function sbYaz(key, value) {
-  await fetch(`${SB_URL}/rest/v1/kurban_data`,{
-    method:"POST",
-    headers:{...SB_HDR,"Prefer":"resolution=merge-duplicates"},
-    body:JSON.stringify({key, value:JSON.stringify(value)})
+  const strVal = JSON.stringify(value);
+  // Önce PATCH dene (kayıt varsa güncelle)
+  const patch = await fetch(`${SB_URL}/rest/v1/kurban_data?key=eq.${key}`, {
+    method:"PATCH",
+    headers:{...SB_HDR,"Prefer":"return=representation"},
+    body:JSON.stringify({value:strVal})
   });
+  const patched = await patch.json();
+  // PATCH sıfır kayıt döndürdüyse yeni kayıt ekle
+  if(!Array.isArray(patched)||patched.length===0){
+    await fetch(`${SB_URL}/rest/v1/kurban_data`,{
+      method:"POST",
+      headers:{...SB_HDR,"Prefer":"return=minimal"},
+      body:JSON.stringify({key,value:strVal})
+    });
+  }
 }
 
 /* = FONTS = */
@@ -239,11 +250,35 @@ export default function App() {
   useEffect(()=>{ if(yuklendi) sbKaydet("hayvanlar",hayvanlar); },[hayvanlar,yuklendi]);
   useEffect(()=>{ if(yuklendi) sbKaydet("talepler",talepler);   },[talepler,yuklendi]);
 
+  const yenile = useCallback(async()=>{
+    const [h,t] = await Promise.all([sbOku("hayvanlar"),sbOku("talepler")]);
+    if(h) setHayvanlar(h);
+    if(t) setTalepler(t);
+  },[]);
+
   /* Auth */
   const giris = ()=>{
-    if(sifre===ADMIN_PASSWORD){setAdmin(true);setView("admin");setSifreErr(false);setSifre("");}
-    else setSifreErr(true);
+    if(sifre===ADMIN_PASSWORD){
+      setAdmin(true);setView("admin");setSifreErr(false);setSifre("");
+      // Admin girişinde taze veri çek
+      (async()=>{
+        const [h,t] = await Promise.all([sbOku("hayvanlar"),sbOku("talepler")]);
+        if(h) setHayvanlar(h);
+        if(t) setTalepler(t);
+      })();
+    } else setSifreErr(true);
   };
+
+  // Admin paneldeyken 20 saniyede bir taze veri çek
+  useEffect(()=>{
+    if(!admin) return;
+    const id = setInterval(async()=>{
+      const [h,t] = await Promise.all([sbOku("hayvanlar"),sbOku("talepler")]);
+      if(h) setHayvanlar(h);
+      if(t) setTalepler(t);
+    }, 20000);
+    return ()=>clearInterval(id);
+  },[admin]);
 
   /* Veri işlemleri */
   const onayla = (tid, ekBilgi={})=>{
@@ -319,7 +354,7 @@ export default function App() {
       <style>{CSS}</style>
       {sbHata&&<div style={{background:"#7f1d1d",color:"#fca5a5",fontSize:11,textAlign:"center",padding:"5px",fontFamily:FONT}}> Bağlantı sorunu - veriler geçici olarak çevrimdışı saklanıyor</div>}
       {view==="login" && <LoginPanel sifre={sifre} setSifre={setSifre} err={sifreErr} onGiris={giris} onGeri={()=>setView("public")}/>}
-      {view==="admin" && admin && <AdminPanel hayvanlar={hayvanlar} talepler={talepler} onOnayla={onayla} onReddet={reddet} onEkleH={ekleH} onGuncH={guncH} onSilH={silH} onSilHisse={silHisse} onDurum={durumH} onHisseDirekt={hisseDirekt} onOdeme={odemeGuncelle} onCikis={()=>{setAdmin(false);setView("public");}} sbHata={sbHata}/>}
+      {view==="admin" && admin && <AdminPanel hayvanlar={hayvanlar} talepler={talepler} onOnayla={onayla} onReddet={reddet} onEkleH={ekleH} onGuncH={guncH} onSilH={silH} onSilHisse={silHisse} onDurum={durumH} onHisseDirekt={hisseDirekt} onOdeme={odemeGuncelle} onCikis={()=>{setAdmin(false);setView("public");}} onYenile={yenile} sbHata={sbHata}/>}
       {(view==="public"||(view==="admin"&&!admin)) && <PublicPanel hayvanlar={hayvanlar} talepler={talepler} onTalep={talepGonder} onAdmin={()=>setView("login")}/>}
     </>
   );
@@ -592,7 +627,7 @@ function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
 /* =
    ADMİN PANELİ
 = */
-function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH,onSilHisse,onDurum,onHisseDirekt,onOdeme,onCikis,sbHata}) {
+function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH,onSilHisse,onDurum,onHisseDirekt,onOdeme,onCikis,onYenile,sbHata}) {
   const [sekme,   setSekme]   = useState("talepler");
   const [yeniH,   setYeniH]   = useState({tip:"buyukbas",kategori:"koyun",numara:"",kesimSirasi:"",fiyat:"",maxHisse:"7",foto:"",aciklama:"",bagisCurban:false});
   const [acik,    setAcik]    = useState(null);
@@ -677,9 +712,10 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
           <p style={{margin:0,fontSize:10,color:"rgba(255,255,255,.7)"}}>Murat Yalvaç Öğrenci Yurdu</p>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0}}>
-          {bekleyen.length>0&&<span style={{background:"#c0392b",color:"#fff",borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{bekleyen.length}</span>}
-          {sbHata&&<span style={{fontSize:10,color:"#f87171"}}> Çevrimdışı</span>}
-          <button onClick={onCikis} style={{...S.btn("#806040"),padding:"6px 12px",fontSize:12}}>Çıkış</button>
+          {bekleyen.length>0&&<span style={{background:"#c0392b",color:"#fff",borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{bekleyen.length} bekliyor</span>}
+          {sbHata&&<span style={{fontSize:10,color:"#f87171"}}>Çevrimdışı</span>}
+          <button onClick={onYenile} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",borderRadius:7,color:"#fff",fontSize:12,padding:"6px 10px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation"}}>↻ Yenile</button>
+          <button onClick={onCikis} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.2)",borderRadius:7,color:"rgba(255,255,255,.85)",fontSize:12,padding:"6px 10px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation"}}>Çıkış</button>
         </div>
       </div>
 

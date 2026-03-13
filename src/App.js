@@ -39,7 +39,7 @@ const kesimSaati = (sira) => {
 const zaman = () => new Date().toLocaleString("tr-TR");
 const getBos = (h) => h.maxHisse - h.hisseler.filter(x=>x.durum==="onaylı").length;
 
-const WA_YONETICI = "905321234567"; // <-- kendi numaranızla değiştirin
+const WA_YONETICI = "905321234567"; // ← kendi numaranızla değiştirin
 const waGonder = (tel, mesaj) => {
   const temizTel = String(tel).replace(/\D/g,"").replace(/^0/,"90");
   window.open(`https://wa.me/${temizTel}?text=${encodeURIComponent(mesaj)}`,"_blank");
@@ -299,6 +299,49 @@ function FotoYukle({mevcut, onChange}) {
   return <FotoGaleri fotolar={mevcut?[mevcut]:[]} onChange={liste=>onChange(liste[0]||"")}/>;
 }
 
+/* Detay modalında fotoğraf slider (proper bileşen — hook kuralları OK) */
+function FotoSlider({fotograflar, tip, kategori}) {
+  const [aktif, setAktif] = React.useState(0);
+  const liste = fotograflar || [];
+  if(liste.length===0) return (
+    <div style={{height:100,background:"#f5efe6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:52}}>
+      {tip==="buyukbas"?"🐂":kategori==="koyun"?"🐑":"🐐"}
+    </div>
+  );
+  return (
+    <div style={{position:"relative",background:"#1a0a00"}}>
+      <div style={{height:"clamp(180px,45vw,250px)",overflow:"hidden"}}>
+        <img src={liste[aktif]} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+          onError={e=>e.target.style.opacity=0}/>
+      </div>
+      {liste.length>1&&(
+        <>
+          <button onClick={()=>setAktif(p=>(p-1+liste.length)%liste.length)}
+            style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.55)",border:"none",borderRadius:"50%",color:"#fff",width:30,height:30,cursor:"pointer",fontSize:18,padding:0,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>‹</button>
+          <button onClick={()=>setAktif(p=>(p+1)%liste.length)}
+            style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.55)",border:"none",borderRadius:"50%",color:"#fff",width:30,height:30,cursor:"pointer",fontSize:18,padding:0,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>›</button>
+          <div style={{position:"absolute",bottom:6,left:0,right:0,display:"flex",justifyContent:"center",gap:5}}>
+            {liste.map((_,i)=>(
+              <button key={i} onClick={()=>setAktif(i)}
+                style={{width:i===aktif?18:7,height:7,borderRadius:4,border:"none",background:i===aktif?"#c8861a":"rgba(255,255,255,.5)",cursor:"pointer",padding:0,transition:"width .2s,background .2s"}}/>
+            ))}
+          </div>
+          <div style={{position:"absolute",top:6,right:8,background:"rgba(0,0,0,.5)",borderRadius:10,padding:"2px 7px",fontSize:10,color:"#fff"}}>{aktif+1}/{liste.length}</div>
+        </>
+      )}
+      {liste.length>1&&(
+        <div style={{display:"flex",gap:4,padding:"6px 8px",background:"rgba(0,0,0,.15)",overflowX:"auto"}}>
+          {liste.map((url,i)=>(
+            <img key={i} src={url} alt="" onClick={()=>setAktif(i)}
+              style={{width:46,height:46,objectFit:"cover",borderRadius:5,cursor:"pointer",border:i===aktif?"2px solid #c8861a":"2px solid transparent",flexShrink:0,opacity:i===aktif?1:.7,transition:"opacity .15s"}}
+              onError={e=>e.target.style.display="none"}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 
 /* =
@@ -498,7 +541,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
       {/* HEADER */}
       <div style={{background:"linear-gradient(180deg,#6b1010,#8b1a1a)",borderBottom:"3px solid #c8861a",position:"relative",padding:"18px 16px 14px",textAlign:"center"}}>
         <button onClick={onAdmin} style={{position:"absolute",top:12,right:12,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,color:"#fff8f0",fontSize:11,fontWeight:600,padding:"6px 12px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation",whiteSpace:"nowrap"}}>⚙ Yönetici</button>
-        <div style={{fontSize:"clamp(28px,7vw,40px)",lineHeight:1,marginBottom:6}}>🐄</div>
+        <div style={{fontSize:"clamp(28px,7vw,40px)",lineHeight:1,marginBottom:6}}>🐂</div>
         <h1 style={{margin:"0 0 2px",fontSize:"clamp(15px,4vw,22px)",fontWeight:700,color:"#fff8f0",letterSpacing:1,fontFamily:FONT}}>MURAT YALVAÇ ÖĞRENCİ YURDU</h1>
         <div style={{fontSize:"clamp(10px,2.5vw,13px)",color:"rgba(255,220,180,.8)",letterSpacing:2,marginBottom:12}}>KURBAN ORGANİZASYONU 2026</div>
         <div style={{display:"flex",justifyContent:"center",gap:"clamp(16px,6vw,48px)"}}>
@@ -519,7 +562,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
       <div className="icerik">
         {/* SEKME NAVİGASYONU */}
         <div className="sbar" style={{marginBottom:14,borderRadius:10,overflow:"hidden"}}>
-          {[["hayvanlar","🐄 Hayvanlar"],["kesimhane","🔪 Kesimhane"],["bilgi","📖 Bilgi & İbadet"],["bagis","🤲 Bağış Kurbanı"]].map(([k,l])=>(
+          {[["hayvanlar","🐂 Hayvanlar"],["kesimhane","🔪 Kesimhane"],["bilgi","📖 Bilgi & İbadet"],["bagis","🤲 Bağış Kurbanı"]].map(([k,l])=>(
             <button key={k} className="sbtn" onClick={()=>setSekme(k)}
               style={{borderBottomColor:sekme===k?"#8b1a1a":"transparent",color:sekme===k?"#8b1a1a":"#4a2810",fontWeight:sekme===k?700:400}}>
               {l}
@@ -553,7 +596,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
                 <div key={h.id} className="hkart" onClick={()=>setDetay(h)} style={{...S.card,overflow:"hidden"}}>
                   {(()=>{const fotoList=h.fotolar&&h.fotolar.length>0?h.fotolar:(h.foto?[h.foto]:[]);const anaFoto=fotoList[0];return anaFoto
                     ?<div style={{height:"clamp(130px,35vw,170px)",overflow:"hidden",background:"#f0e6d3",position:"relative"}}><img src={anaFoto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>{fotoList.length>1&&<div style={{position:"absolute",bottom:5,right:7,background:"rgba(0,0,0,.55)",borderRadius:10,padding:"2px 7px",fontSize:9,color:"#fff"}}>📷 {fotoList.length}</div>}</div>
-                    :<div style={{height:80,background:"rgba(200,134,26,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:38}}>{h.tip==="buyukbas"?"🐄":h.kategori==="koyun"?"🐑":"🐐"}</div>;})()}
+                    :<div style={{height:80,background:"rgba(200,134,26,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:38}}>{h.tip==="buyukbas"?"🐂":h.kategori==="koyun"?"🐑":"🐐"}</div>;})()}
                   <div style={{padding:"10px 12px"}}>
                     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
                       <div style={{display:"inline-block",background:h.tip==="buyukbas"?"#8b1a1a":"#14532d",padding:"1px 9px",borderRadius:20,fontSize:9,color:"#fff8f0"}}>
@@ -725,7 +768,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
             <div style={{background:"#fff",border:"1px solid rgba(200,134,26,.2)",borderRadius:12,padding:"16px",marginBottom:12}}>
               <h3 style={{margin:"0 0 10px",color:"#8b1a1a",fontFamily:FONT,fontSize:15}}>Ne Yapıyoruz?</h3>
               {[
-                {ikon:"🐄",baslik:"Hayır Sahibinden Kurban",acik:"Hayır sahipleri adına kurban alınır, kesimleri vekâleten gerçekleştirilir."},
+                {ikon:"🐂",baslik:"Hayır Sahibinden Kurban",acik:"Hayır sahipleri adına kurban alınır, kesimleri vekâleten gerçekleştirilir."},
                 {ikon:"❄️",baslik:"Dondurularak Muhafaza",acik:"Kesilen et, soğuk zincirde hijyenik şekilde saklanır ve porsiyonlanır."},
                 {ikon:"🎓",baslik:"Öğrencilere Ulaştırılır",acik:"Yurdumuzda kalan öğrencilere aylık düzenli et dağıtımı yapılır."},
                 {ikon:"📅",baslik:"Yıl Boyunca Tüketim",acik:"Bir kurban, yaklaşık 12 öğrencinin aylık et ihtiyacını 1 ay karşılar."},
@@ -760,10 +803,10 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
             {/* Bağış kurbanı olan hayvanlar */}
             {hayvanlar.filter(h=>h.durum==="aktif"&&h.bagisCurban).length>0&&(
               <div>
-                <h4 style={{margin:"0 0 10px",color:"#8b1a1a",fontSize:14,fontFamily:FONT}}>🐄 Aktif Bağış Kurbanları</h4>
+                <h4 style={{margin:"0 0 10px",color:"#8b1a1a",fontSize:14,fontFamily:FONT}}>🐂 Aktif Bağış Kurbanları</h4>
                 {hayvanlar.filter(h=>h.durum==="aktif"&&h.bagisCurban).map(h=>(
                   <div key={h.id} style={{background:"#fff",border:"1px solid rgba(200,134,26,.2)",borderRadius:10,padding:"10px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{fontSize:28}}>{h.tip==="buyukbas"?"🐄":h.kategori==="koyun"?"🐑":"🐐"}</div>
+                    <div style={{fontSize:28}}>{h.tip==="buyukbas"?"🐂":h.kategori==="koyun"?"🐑":"🐐"}</div>
                     <div>
                       <div style={{fontWeight:700,fontSize:13,color:"#8b1a1a"}}>#{h.numara} Nolu Hayvan</div>
                       <div style={{fontSize:11,color:"#6b4423"}}>Kesim Sırası: {h.kesimSirasi}. hayvan — {formatTL(h.fiyat)}</div>
@@ -800,37 +843,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
           <div className="modal-bg" onClick={()=>setDetay(null)}>
             <div className="modal-kart" onClick={e=>e.stopPropagation()}>
               <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}><div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,.12)"}}/></div>
-              {(()=>{
-                const fotograflar = h.fotolar && h.fotolar.length>0 ? h.fotolar : (h.foto ? [h.foto] : []);
-                const [aktifFoto, setAktifFoto] = React.useState(0);
-                if(fotograflar.length===0) return <div style={{height:80,background:"#f5efe6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:48}}>{h.tip==="buyukbas"?"🐄":h.kategori==="koyun"?"🐑":"🐐"}</div>;
-                return (
-                  <div style={{position:"relative"}}>
-                    <div style={{height:"clamp(180px,45vw,240px)",overflow:"hidden",background:"#1a0a00"}}>
-                      <img src={fotograflar[aktifFoto]} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} onError={e=>e.target.style.opacity=0}/>
-                    </div>
-                    {fotograflar.length>1&&(
-                      <>
-                        <button onClick={()=>setAktifFoto(p=>(p-1+fotograflar.length)%fotograflar.length)} style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.5)",border:"none",borderRadius:"50%",color:"#fff",width:28,height:28,cursor:"pointer",fontSize:16,padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
-                        <button onClick={()=>setAktifFoto(p=>(p+1)%fotograflar.length)} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.5)",border:"none",borderRadius:"50%",color:"#fff",width:28,height:28,cursor:"pointer",fontSize:16,padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
-                        <div style={{position:"absolute",bottom:6,left:0,right:0,display:"flex",justifyContent:"center",gap:5}}>
-                          {fotograflar.map((_,i)=>(
-                            <button key={i} onClick={()=>setAktifFoto(i)} style={{width:i===aktifFoto?18:7,height:7,borderRadius:4,border:"none",background:i===aktifFoto?"#c8861a":"rgba(255,255,255,.5)",cursor:"pointer",padding:0,transition:"width .2s"}}/>
-                          ))}
-                        </div>
-                        <div style={{position:"absolute",top:6,right:8,background:"rgba(0,0,0,.5)",borderRadius:10,padding:"2px 7px",fontSize:10,color:"#fff"}}>{aktifFoto+1}/{fotograflar.length}</div>
-                      </>
-                    )}
-                    {fotograflar.length>1&&(
-                      <div style={{display:"flex",gap:4,padding:"6px 8px",background:"rgba(0,0,0,.08)",overflowX:"auto"}}>
-                        {fotograflar.map((url,i)=>(
-                          <img key={i} src={url} alt="" onClick={()=>setAktifFoto(i)} style={{width:44,height:44,objectFit:"cover",borderRadius:4,cursor:"pointer",border:i===aktifFoto?"2px solid #c8861a":"2px solid transparent",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              <FotoSlider fotograflar={h.fotolar&&h.fotolar.length>0?h.fotolar:(h.foto?[h.foto]:[])} tip={h.tip} kategori={h.kategori}/>
               <div style={{padding:"16px 18px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div>
@@ -951,7 +964,7 @@ function LoginPanel({sifre,setSifre,err,onGiris,onGeri}) {
   return (
     <div style={{...S.page,display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:16}}>
       <div style={{background:"linear-gradient(160deg,#6b1010,#8b1a1a)",border:"3px solid #c8861a",borderRadius:18,padding:"clamp(24px,6vw,36px) clamp(18px,5vw,28px)",width:"100%",maxWidth:330,textAlign:"center"}}>
-        <div style={{fontSize:40,marginBottom:10}}>🐄</div>
+        <div style={{fontSize:40,marginBottom:10}}>🐂</div>
         <h2 style={{color:"#fff8f0",margin:"0 0 4px",fontFamily:FONT}}>Yönetici Girişi</h2>
         <p style={{color:"rgba(255,220,180,.8)",fontSize:13,margin:"0 0 18px"}}>Şifreyi girerek devam edin</p>
         <input type="password" value={sifre} onChange={e=>setSifre(e.target.value)} onKeyDown={e=>e.key==="Enter"&&onGiris()} placeholder="Şifre"
@@ -1331,8 +1344,8 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
             <div style={{display:"flex",flexDirection:"column",gap:11}}>
               <div><label style={S.lbl}>Tür</label>
                 <select value={yeniH.tip} onChange={e=>setYeniH(p=>({...p,tip:e.target.value,maxHisse:e.target.value==="kucukbas"?"1":"7"}))} style={S.sel}>
-                  <option value="buyukbas"> Büyükbaş</option>
-                  <option value="kucukbas"> Küçükbaş</option>
+                  <option value="buyukbas">🐂 Büyükbaş</option>
+                  <option value="kucukbas">🐑 Küçükbaş</option>
                 </select>
               </div>
               {yeniH.tip==="kucukbas"&&(
@@ -1445,7 +1458,7 @@ function AdminPanel({hayvanlar,talepler,onOnayla,onReddet,onEkleH,onGuncH,onSilH
                         <tr key={h.id} style={{borderBottom:"1px solid rgba(255,255,255,.04)"}}>
                           <td style={{padding:"6px 7px",color:"#4a2810"}}>{h.kesimSirasi}.</td>
                           <td style={{padding:"6px 7px",color:"#7a2e0e",fontWeight:700}}>#{h.numara}</td>
-                          <td style={{padding:"6px 7px",color:"#8a5c30"}}>{h.tip==="buyukbas"?"":""}</td>
+                          <td style={{padding:"6px 7px",color:"#8a5c30"}}>{h.tip==="buyukbas"?"🐂":""}</td>
                           <td style={{padding:"6px 7px",color:"#2d1a08"}}>{h.maxHisse}</td>
                           <td style={{padding:"6px 7px",color:"#4ade80",fontWeight:700}}>{d}</td>
                           <td style={{padding:"6px 7px",color:h.maxHisse-d>0?"#f87171":"#604030",fontWeight:700}}>{h.maxHisse-d}</td>

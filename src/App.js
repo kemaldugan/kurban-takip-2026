@@ -887,10 +887,30 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
                   </div>
                 )}
                 {h.bagisCurban
-                  ?<div style={{textAlign:"center",padding:"14px",background:"linear-gradient(135deg,rgba(146,64,14,.08),rgba(139,26,26,.06))",borderRadius:10,border:"1px solid rgba(146,64,14,.2)"}}>
-                    <div style={{fontSize:20,marginBottom:6}}>🤲</div>
-                    <div style={{fontWeight:700,color:"#92400e",fontSize:14,marginBottom:3}}>Bağış Kurbanı</div>
-                    <div style={{fontSize:12,color:"#6b4423"}}>Bu kurban bağış olarak ayrılmıştır.<br/>Hisse alınamaz.</div>
+                  ?<div style={{background:"linear-gradient(135deg,rgba(146,64,14,.06),rgba(139,26,26,.04))",borderRadius:12,border:"1px solid rgba(146,64,14,.2)",overflow:"hidden"}}>
+                    <div style={{textAlign:"center",padding:"14px 14px 10px"}}>
+                      <div style={{fontSize:22,marginBottom:5}}>🤲</div>
+                      <div style={{fontWeight:700,color:"#92400e",fontSize:14,marginBottom:4}}>Bağış Kurbanı</div>
+                      <div style={{fontSize:12,color:"#6b4423",lineHeight:1.6,marginBottom:12}}>
+                        Bu kurban bağış olarak ayrılmıştır.<br/>
+                        Siz de bağış sahibi olmak için aşağıdan yönetici ile iletişime geçebilirsiniz.
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:8,padding:"0 12px 14px"}}>
+                      <button
+                        onClick={()=>{
+                          const msg = `BAĞIŞ KURBAN TALEBİ\n\nMerhaba, #${h.numara} nolu bağış kurbanı için sahip olmak istiyorum.\nBilgi alabilir miyim?\n\nKurban Takip: kurban-takip-2026.vercel.app`;
+                          waGonder(WA_YONETICI, msg);
+                        }}
+                        style={{flex:1,padding:"11px 10px",background:"#25d366",border:"none",borderRadius:9,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <span style={{fontSize:16}}>📱</span> WhatsApp ile İletişim
+                      </button>
+                      <button
+                        onClick={()=>{window.location.href=`tel:+${WA_YONETICI}`;}}
+                        style={{padding:"11px 14px",background:"rgba(139,26,26,.1)",border:"1px solid rgba(139,26,26,.25)",borderRadius:9,color:"#8b1a1a",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                        <span style={{fontSize:15}}>📞</span> Ara
+                      </button>
+                    </div>
                   </div>
                   :efBos>0
                     ?<button onClick={()=>{setDetay(null);setTalepModal(h);}} style={{width:"100%",padding:"13px",background:"linear-gradient(90deg,#7a1a1a,#b91c1c)",border:"none",borderRadius:10,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:"clamp(13px,3.5vw,15px)",touchAction:"manipulation"}}>

@@ -73,11 +73,31 @@ async function sbYaz(key, value) {
   }
 }
 
-/* = FONTS = */
+/* = FONTS + PWA META = */
 const _fl = document.createElement("link");
 _fl.rel="stylesheet";
 _fl.href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&display=swap";
 document.head.appendChild(_fl);
+
+/* PWA meta — App bileşeni mount edilince çalışır */
+function usePWAMeta() {
+  React.useEffect(()=>{
+    const metas = [
+      {name:"viewport",          content:"width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"},
+      {name:"theme-color",        content:"#7a1a1a"},
+      {name:"apple-mobile-web-app-capable", content:"yes"},
+      {name:"apple-mobile-web-app-status-bar-style", content:"black-translucent"},
+      {name:"apple-mobile-web-app-title", content:"Kurban 2026"},
+      {name:"mobile-web-app-capable", content:"yes"},
+    ];
+    metas.forEach(({name,content})=>{
+      let m=document.querySelector(`meta[name="${name}"]`);
+      if(!m){m=document.createElement("meta");m.name=name;document.head.appendChild(m);}
+      m.content=content;
+    });
+    document.title="Kurban 2026 — Murat Yalvaç Yurdu";
+  },[]);
+}
 
 const FONT = "'Inter','Amiri',sans-serif";
 
@@ -86,40 +106,99 @@ const FONT = "'Inter','Amiri',sans-serif";
 /* = GLOBAL CSS = */
 const CSS = `
   *,*::before,*::after{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{margin:0;background:#f5efe6;-webkit-tap-highlight-color:transparent;overflow-x:hidden;}
+  html{scroll-behavior:smooth;height:100%;}
+
+  /* PWA tam ekran + güvenli alan */
+  body{
+    margin:0;
+    background:#f5efe6;
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+    /* iOS overscroll bounce rengi */
+    overscroll-behavior-y:contain;
+    /* Güvenli alan padding */
+    padding-bottom:env(safe-area-inset-bottom);
+  }
   input,select,textarea,button{font-family:${FONT};}
   h1,h2,h3,h4{margin:0;font-family:${FONT};}
 
-  /* Kart hover — sadece fare olan cihazlarda */
-  @media(hover:hover){.hkart:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,26,26,.14);}}
-  .hkart{transition:transform .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+  /* Dokunma geri bildirimi — aktif press efekti */
+  .hkart:active{transform:scale(0.97);opacity:.92;}
+  @media(hover:hover){.hkart:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(139,26,26,.18);}}
+  .hkart{transition:transform .12s ease,box-shadow .12s ease,opacity .12s ease;
+         -webkit-tap-highlight-color:transparent;cursor:pointer;will-change:transform;}
 
-  /* Hayvan kartı grid */
+  /* Hayvan kartı grid — mobilde 2'li grid */
   .hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
-  @media(max-width:540px){.hgrid{grid-template-columns:1fr;gap:10px;}}
+  @media(max-width:600px){.hgrid{grid-template-columns:repeat(2,1fr);gap:8px;}}
+  @media(max-width:360px){.hgrid{grid-template-columns:1fr;gap:10px;}}
 
-  /* Sekme bar */
+  /* Alt sekme çubuğu (mobil uygulama tarzı) */
+  .alt-tab{
+    display:none;
+    position:fixed;bottom:0;left:0;right:0;
+    background:#fff;
+    border-top:1px solid rgba(200,134,26,.2);
+    padding:6px 0 max(10px,env(safe-area-inset-bottom));
+    z-index:200;
+    box-shadow:0 -4px 20px rgba(0,0,0,.08);
+  }
+  @media(max-width:640px){.alt-tab{display:flex;}}
+  .alt-tab-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:none;cursor:pointer;padding:4px 0;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+    transition:transform .1s;
+  }
+  .alt-tab-btn:active{transform:scale(.9);}
+  .alt-tab-icon{font-size:22px;line-height:1;transition:transform .15s;}
+  .alt-tab-btn.aktif .alt-tab-icon{transform:scale(1.15);}
+  .alt-tab-lbl{font-size:9px;font-family:${FONT};font-weight:600;letter-spacing:.3px;}
+
+  /* Masaüstü üst sekme çubuğu */
+  .ust-tab{display:flex;}
+  @media(max-width:640px){.ust-tab{display:none;}}
+
+  /* Üst sekme bar stili */
   .sbar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
-        border-bottom:2px solid rgba(122,20,20,.15);scrollbar-width:none;background:#f5efe6;}
+        border-bottom:2px solid rgba(122,20,20,.15);scrollbar-width:none;background:transparent;}
   .sbar::-webkit-scrollbar{display:none;}
   .sbtn{flex-shrink:0;padding:12px 16px;background:none;border:none;border-bottom:3px solid transparent;
         cursor:pointer;font-family:${FONT};font-size:13px;font-weight:500;white-space:nowrap;
         touch-action:manipulation;color:#6b4423;margin-bottom:-2px;}
 
-  /* Modallar */
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;
+  /* Modallar — bottom sheet mobilde */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;
             justify-content:center;z-index:300;padding:0;}
   @media(min-width:600px){.modal-bg{align-items:center;padding:16px;}}
-  .modal-kart{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;
-              max-height:92vh;overflow-y:auto;padding:0;}
-  @media(min-width:600px){.modal-kart{border-radius:18px;max-height:88vh;}}
-  /* Talep formu - mobilde tam ekran */
-  .talep-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+  .modal-kart{
+    background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:540px;
+    max-height:94vh;overflow-y:auto;padding:0;
+    animation:slideUp .25s cubic-bezier(.32,1.1,.7,1) both;
+  }
+  @media(min-width:600px){.modal-kart{border-radius:20px;max-height:88vh;animation:none;}}
+
+  /* Talep formu */
+  .talep-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;
+            align-items:flex-end;justify-content:center;}
   @media(min-width:600px){.talep-bg{align-items:center;}}
-  .talep-kart{background:#fdf8f0;width:100%;max-width:480px;
-              height:100%;max-height:100%;overflow-y:auto;padding:0;display:flex;flex-direction:column;}
-  @media(min-width:600px){.talep-kart{height:auto;max-height:90vh;border-radius:16px;}}
+  .talep-kart{
+    background:#fdf8f0;width:100%;max-width:480px;
+    height:100%;max-height:100%;overflow-y:auto;padding:0;
+    display:flex;flex-direction:column;
+    animation:slideUp .22s cubic-bezier(.32,1.1,.7,1) both;
+  }
+  @media(min-width:600px){.talep-kart{height:auto;max-height:90vh;border-radius:18px;animation:none;}}
+
+  /* Slide-up animasyon */
+  @keyframes slideUp{
+    from{transform:translateY(60px);opacity:0;}
+    to{transform:translateY(0);opacity:1;}
+  }
+
+  /* Swipe indicator (drag handle) */
+  .drag-handle{width:40px;height:4px;border-radius:2px;background:rgba(0,0,0,.15);
+               margin:10px auto 6px;display:block;}
 
   /* Genel form satırı */
   .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -144,15 +223,23 @@ const CSS = `
   /* İstatistik bar sayıları */
   .stat-bar{display:flex;justify-content:space-around;gap:4px;}
 
-  /* Genel içerik sarıcı */
+  /* Genel içerik sarıcı — alt tab için padding */
   .icerik{max-width:860px;margin:0 auto;padding:14px 12px 40px;}
-  @media(max-width:480px){.icerik{padding:10px 10px 32px;}}
+  @media(max-width:640px){.icerik{padding:10px 10px 100px;}}
+
+  /* Kart press efekti */
+  .btn-press:active{transform:scale(.97);opacity:.88;}
+  .btn-press{transition:transform .1s,opacity .1s;touch-action:manipulation;}
+
+  /* Scrollbar gizle — mobil hissiyat */
+  ::-webkit-scrollbar{display:none;}
+  *{scrollbar-width:none;}
 `;
 
 
 /* = STİLLER = */
 const S = {
-  page: {minHeight:"100vh",background:"#f5efe6",fontFamily:FONT,color:"#2d1a08"},
+  page: {minHeight:"100vh",background:"#f5efe6",fontFamily:FONT,color:"#2d1a08",WebkitFontSmoothing:"antialiased"},
   card: {background:"#ffffff",border:"1px solid rgba(200,134,26,.25)",borderRadius:14,boxShadow:"0 2px 8px rgba(122,62,16,.08)"},
   btn:  (c="#8b4a10")=>({padding:"8px 14px",border:`1px solid ${c}`,borderRadius:8,background:"transparent",color:c,cursor:"pointer",fontFamily:FONT,fontSize:13,touchAction:"manipulation",whiteSpace:"nowrap"}),
   solid:(bg="#8b1a1a",c="#fff8f0")=>({padding:"11px 18px",border:"none",borderRadius:8,background:bg,color:c,cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:14,touchAction:"manipulation"}),
@@ -348,6 +435,7 @@ function FotoSlider({fotograflar, tip, kategori}) {
    ANA UYGULAMA
 = */
 export default function App() {
+  usePWAMeta();
   const [hayvanlar,  setHayvanlar]  = useState([]);
   const [talepler,   setTalepler]   = useState([]);
   const [view,       setView]       = useState("public");
@@ -476,10 +564,19 @@ export default function App() {
   };
 
   if(!yuklendi) return (
-    <div style={{minHeight:"100vh",background:"#f5efe6",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:FONT}}>
-      <div style={{fontSize:48,marginBottom:14}}></div>
-      <div style={{fontSize:15,color:"#92400e",marginBottom:6}}>Veriler yükleniyor...</div>
-      <div style={{fontSize:11,color:"#6b4423"}}>Supabase bağlantısı kuruluyor</div>
+    <div style={{minHeight:"100vh",background:"linear-gradient(170deg,#6b1010 0%,#8b1a1a 45%,#a0260f 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:FONT,padding:20}}>
+      <div style={{fontSize:"clamp(64px,18vw,90px)",marginBottom:16,filter:"drop-shadow(0 4px 16px rgba(0,0,0,.3))"}}>🐂</div>
+      <div style={{fontSize:"clamp(18px,5vw,24px)",fontWeight:800,color:"#fff8f0",letterSpacing:1,marginBottom:4,textAlign:"center"}}>KURBAN 2026</div>
+      <div style={{fontSize:"clamp(11px,3vw,13px)",color:"rgba(255,220,180,.7)",marginBottom:32,textAlign:"center",letterSpacing:2}}>MURAT YALVAÇ ÖĞRENCİ YURDU</div>
+      <div style={{display:"flex",gap:8}}>
+        {[0,1,2].map(i=>(
+          <div key={i} style={{
+            width:8,height:8,borderRadius:"50%",background:"rgba(255,220,180,.6)",
+            animation:`bounce 1.2s ease-in-out ${i*0.2}s infinite`,
+          }}/>
+        ))}
+      </div>
+      <style>{`@keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}`}</style>
     </div>
   );
 
@@ -539,9 +636,9 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
   return (
     <div style={S.page}>
       {/* HEADER */}
-      <div style={{background:"linear-gradient(180deg,#6b1010,#8b1a1a)",borderBottom:"3px solid #c8861a",position:"relative",padding:"18px 16px 14px",textAlign:"center"}}>
+      <div style={{background:"linear-gradient(180deg,#6b1010,#8b1a1a)",borderBottom:"3px solid #c8861a",position:"sticky",top:0,zIndex:100,padding:"14px 16px 12px",textAlign:"center",WebkitBackdropFilter:"blur(10px)"}}>
         <button onClick={onAdmin} style={{position:"absolute",top:12,right:12,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,color:"#fff8f0",fontSize:11,fontWeight:600,padding:"6px 12px",cursor:"pointer",fontFamily:FONT,touchAction:"manipulation",whiteSpace:"nowrap"}}>⚙ Yönetici</button>
-        <div style={{fontSize:"clamp(28px,7vw,40px)",lineHeight:1,marginBottom:6}}>🐂</div>
+        <div style={{fontSize:"clamp(22px,5vw,32px)",lineHeight:1,marginBottom:4}}>🐂</div>
         <h1 style={{margin:"0 0 2px",fontSize:"clamp(15px,4vw,22px)",fontWeight:700,color:"#fff8f0",letterSpacing:1,fontFamily:FONT}}>MURAT YALVAÇ ÖĞRENCİ YURDU</h1>
         <div style={{fontSize:"clamp(10px,2.5vw,13px)",color:"rgba(255,220,180,.8)",letterSpacing:2,marginBottom:12}}>KURBAN ORGANİZASYONU 2026</div>
         <div style={{display:"flex",justifyContent:"center",gap:"clamp(16px,6vw,48px)"}}>
@@ -560,8 +657,8 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
 
 
       <div className="icerik">
-        {/* SEKME NAVİGASYONU */}
-        <div className="sbar" style={{marginBottom:14,borderRadius:10,overflow:"hidden"}}>
+        {/* SEKME NAVİGASYONU — masaüstünde üstte, mobilde altta */}
+        <div className="sbar ust-tab" style={{marginBottom:14,borderRadius:10,overflow:"hidden"}}>
           {[["hayvanlar","🐂 Hayvanlar"],["kesimhane","🔪 Kesimhane"],["bilgi","📖 Bilgi & İbadet"],["bagis","🤲 Bağış Kurbanı"]].map(([k,l])=>(
             <button key={k} className="sbtn" onClick={()=>setSekme(k)}
               style={{borderBottomColor:sekme===k?"#8b1a1a":"transparent",color:sekme===k?"#8b1a1a":"#4a2810",fontWeight:sekme===k?700:400}}>
@@ -623,7 +720,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
                       {bek>0&&<div style={{fontSize:9,color:"#92400e",marginTop:2}}>{bek} bekleyen talep</div>}
                     </div>}
                     {h.bagisCurban&&<div style={{marginTop:8,fontSize:11,color:"#92400e",fontWeight:600}}>🤲 Bağış Kurbanı</div>}
-                    <div style={{marginTop:6,textAlign:"center",fontSize:11,color:"#8a5c30"}}>Detay için tıkla →</div>
+                    <div style={{marginTop:6,background:"linear-gradient(90deg,#8b1a1a,#b91c1c)",borderRadius:8,padding:"7px",textAlign:"center",fontSize:"clamp(11px,3vw,12px)",color:"#fff",fontWeight:600}}>Detaylar & Hisse Al →</div>
                   </div>
                 </div>
               );
@@ -825,6 +922,23 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
         </div>
       </div>
 
+      {/* ALT TAB ÇUBUĞU — sadece mobilde görünür */}
+      <nav className="alt-tab">
+        {[
+          {k:"hayvanlar", ikon:"🐂", lbl:"Hayvanlar"},
+          {k:"kesimhane", ikon:"🔪", lbl:"Kesimhane"},
+          {k:"bilgi",     ikon:"📖", lbl:"İbadet"},
+          {k:"bagis",     ikon:"🤲", lbl:"Bağış"},
+        ].map(({k,ikon,lbl})=>(
+          <button key={k} className={"alt-tab-btn"+(sekme===k?" aktif":"")}
+            onClick={()=>setSekme(k)}
+            style={{color:sekme===k?"#8b1a1a":"#6b4423"}}>
+            <span className="alt-tab-icon">{ikon}</span>
+            <span className="alt-tab-lbl" style={{fontWeight:sekme===k?700:400}}>{lbl}</span>
+          </button>
+        ))}
+      </nav>
+
       {/* TOAST */}
       {mesaj&&(
         <div style={{position:"fixed",bottom:"max(16px,env(safe-area-inset-bottom))",left:"50%",transform:"translateX(-50%)",background:mesaj.tip==="ok"?"#14532d":"#991b1b",border:`1px solid ${mesaj.tip==="ok"?"#4ade80":"#f87171"}`,color:"#fff",padding:"11px 18px",borderRadius:10,maxWidth:"92vw",textAlign:"center",zIndex:400,fontSize:"clamp(11px,3vw,13px)",boxShadow:"0 4px 20px rgba(0,0,0,.6)",wordBreak:"break-word"}}>
@@ -842,7 +956,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
         return (
           <div className="modal-bg" onClick={()=>setDetay(null)}>
             <div className="modal-kart" onClick={e=>e.stopPropagation()}>
-              <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}><div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,.12)"}}/></div>
+              <div style={{padding:"8px 0 2px",textAlign:"center"}}><span className="drag-handle"/></div>
               <FotoSlider fotograflar={h.fotolar&&h.fotolar.length>0?h.fotolar:(h.foto?[h.foto]:[])} tip={h.tip} kategori={h.kategori}/>
               <div style={{padding:"16px 18px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>

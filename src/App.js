@@ -898,24 +898,49 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
                     </div>
                     <div style={{display:"flex",gap:8,padding:"0 12px 14px"}}>
                       <button
+                        onClick={()=>{setDetay(null);setTalepModal({...h,bagisTalep:true});}}
+                        style={{flex:2,padding:"11px 8px",background:"linear-gradient(90deg,#7a1a1a,#b91c1c)",border:"none",borderRadius:9,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <span>📋</span> Talep Formu
+                      </button>
+                      <button
                         onClick={()=>{
                           const msg = `BAĞIŞ KURBAN TALEBİ\n\nMerhaba, #${h.numara} nolu bağış kurbanı için sahip olmak istiyorum.\nBilgi alabilir miyim?\n\nKurban Takip: kurban-takip-2026.vercel.app`;
                           waGonder(WA_YONETICI, msg);
                         }}
-                        style={{flex:1,padding:"11px 10px",background:"#25d366",border:"none",borderRadius:9,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        <span style={{fontSize:16}}>📱</span> WhatsApp ile İletişim
+                        style={{flex:2,padding:"11px 8px",background:"#25d366",border:"none",borderRadius:9,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <span>💬</span> WhatsApp
                       </button>
                       <button
                         onClick={()=>{window.location.href=`tel:+${WA_YONETICI}`;}}
-                        style={{padding:"11px 14px",background:"rgba(139,26,26,.1)",border:"1px solid rgba(139,26,26,.25)",borderRadius:9,color:"#8b1a1a",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                        <span style={{fontSize:15}}>📞</span> Ara
+                        style={{flex:1,padding:"11px 10px",background:"rgba(139,26,26,.08)",border:"1px solid rgba(139,26,26,.25)",borderRadius:9,color:"#8b1a1a",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                        <span>📞</span> Ara
                       </button>
                     </div>
                   </div>
                   :efBos>0
-                    ?<button onClick={()=>{setDetay(null);setTalepModal(h);}} style={{width:"100%",padding:"13px",background:"linear-gradient(90deg,#7a1a1a,#b91c1c)",border:"none",borderRadius:10,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:"clamp(13px,3.5vw,15px)",touchAction:"manipulation"}}>
-                       Hisse Talep Et — {formatTL(hT)}
-                    </button>
+                    ?<div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {/* Ana buton — doğrudan talep */}
+                      <button onClick={()=>{setDetay(null);setTalepModal(h);}}
+                        style={{width:"100%",padding:"13px",background:"linear-gradient(90deg,#7a1a1a,#b91c1c)",border:"none",borderRadius:10,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:"clamp(13px,3.5vw,15px)",touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+                        <span>📋</span> Hisse Talep Et — {formatTL(hT)}
+                      </button>
+                      {/* İletişim butonları */}
+                      <div style={{display:"flex",gap:8}}>
+                        <button
+                          onClick={()=>{
+                            const msg = `HİSSE TALEBİ\n\nMerhaba, #${h.numara} nolu hayvan için hisse almak istiyorum.\nHisse bedeli: ${new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(hT)}\nBoş hisse: ${efBos}\n\nBilgi alabilir miyim?`;
+                            waGonder(WA_YONETICI, msg);
+                          }}
+                          style={{flex:1,padding:"10px 8px",background:"#25d366",border:"none",borderRadius:9,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:"clamp(11px,3vw,13px)",touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                          <span>💬</span> WhatsApp
+                        </button>
+                        <button
+                          onClick={()=>{window.location.href=`tel:+${WA_YONETICI}`;}}
+                          style={{flex:1,padding:"10px 8px",background:"rgba(139,26,26,.08)",border:"1px solid rgba(139,26,26,.25)",borderRadius:9,color:"#8b1a1a",cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:"clamp(11px,3vw,13px)",touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                          <span>📞</span> Ara
+                        </button>
+                      </div>
+                    </div>
                     :<div style={{textAlign:"center",padding:"11px",background:"#f9f3ea",borderRadius:10,color:"#6b4423",fontSize:13}}>Bu hayvan için yer kalmadı</div>
                 }
               </div>
@@ -931,13 +956,13 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
             {/* Sabit header */}
             <div style={{background:"linear-gradient(135deg,#7a1a1a,#9b1c1c)",padding:"16px 18px 14px",flexShrink:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                <span style={{color:"rgba(255,255,255,.7)",fontSize:11}}>Hisse Talebi</span>
+                <span style={{color:"rgba(255,255,255,.7)",fontSize:11}}>{talepModal.bagisTalep?"🤲 Bağış Kurbanı Talebi":"📋 Hisse Talebi"}</span>
                 <button onClick={()=>setTalepModal(null)} style={{background:"rgba(255,255,255,.15)",border:"none",borderRadius:20,color:"#fff",fontSize:18,width:30,height:30,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation",flexShrink:0,padding:0}}>×</button>
               </div>
               <div style={{color:"#fff",fontWeight:700,fontSize:"clamp(16px,4.5vw,20px)"}}>#{talepModal.numara} Nolu Hayvan</div>
-              <div style={{color:"rgba(255,255,255,.85)",fontSize:"clamp(13px,3.5vw,16px)",marginTop:2,fontWeight:600}}>
+                {!talepModal.bagisTalep&&<div style={{color:"rgba(255,255,255,.85)",fontSize:"clamp(13px,3.5vw,16px)",marginTop:2,fontWeight:600}}>
                 {formatTL(talepModal.tip==="buyukbas"?Math.round(talepModal.fiyat/talepModal.maxHisse):talepModal.fiyat)} / hisse
-              </div>
+              </div>}
             </div>
             {/* Kaydırılabilir form */}
             <div style={{flex:1,overflow:"auto",padding:"20px 18px",display:"flex",flexDirection:"column",gap:14}}>
@@ -955,8 +980,11 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
                   style={{...S.inp,fontSize:16,padding:"14px 14px",borderRadius:10}}
                   autoComplete="tel"/>
               </div>
-              <div style={{background:"#fdf0e0",border:"1px solid rgba(200,134,26,.25)",borderRadius:10,padding:"12px 14px",fontSize:13,color:"#92400e",lineHeight:1.5}}>
-                Talebiniz yönetici onayına gönderilecek. Onay sonrası WhatsApp ile bildirim alacaksınız.
+              <div style={{background:talepModal.bagisTalep?"linear-gradient(135deg,rgba(146,64,14,.1),rgba(139,26,26,.08))":"#fdf0e0",border:`1px solid ${talepModal.bagisTalep?"rgba(146,64,14,.3)":"rgba(200,134,26,.25)"}`,borderRadius:10,padding:"12px 14px",fontSize:13,color:"#92400e",lineHeight:1.5}}>
+                {talepModal.bagisTalep
+                  ? "🤲 Bağış kurbanı sahiplenmek için talebinizi gönderin. Yönetici sizi arayarak bilgi verecektir."
+                  : "Talebiniz yönetici onayına gönderilecek. Onay sonrası WhatsApp ile bildirim alacaksınız."
+                }
               </div>
             </div>
             {/* Sabit footer butonlar */}
@@ -967,7 +995,7 @@ function PublicPanel({hayvanlar,talepler,onTalep,onAdmin}) {
               </button>
               <button onClick={gonder} disabled={gonderiyor}
                 style={{flex:2,padding:"14px",background:gonderiyor?"#aaa":"linear-gradient(90deg,#7a1a1a,#b91c1c)",border:"none",borderRadius:10,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:15,touchAction:"manipulation"}}>
-                {gonderiyor?"Gönderiliyor...":"Talep Gönder"}
+                {gonderiyor?"Gönderiliyor...": talepModal.bagisTalep ? "🤲 Bağış Talebini Gönder" : "📋 Talep Gönder"}
               </button>
             </div>
           </div>

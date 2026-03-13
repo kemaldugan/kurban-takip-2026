@@ -1411,7 +1411,7 @@ function AdminPanel({hayvanlar,talepler,yorumlar,onOnayla,onReddet,onEkleH,onGun
 
       {/* Sekmeler */}
       <div className="sbar">
-        {[["talepler",` Talepler${bekleyen.length>0?` (${bekleyen.length})`:""}`,],["hayvanlar"," Hayvanlar"],["ekle"," Ekle"],["rapor"," Rapor"]].map(([k,l])=>(
+        {[["talepler",`📋 Talepler${bekleyen.length>0?" ("+bekleyen.length+")":""}`,],["hayvanlar","🐂 Hayvanlar"],["ekle","➕ Ekle"],["yorumlar","⭐ Yorumlar"+(yorumlar.length>0?" ("+yorumlar.length+")":"")],["rapor","📊 Rapor"]].map(([k,l])=>(
           <button key={k} className="sbtn" onClick={()=>setSekme(k)} style={{borderBottomColor:sekme===k?"#7a2e0e":"transparent",color:sekme===k?"#7a2e0e":"#5c3d1e"}}>{l}</button>
         ))}
       </div>
@@ -1638,25 +1638,22 @@ function AdminPanel({hayvanlar,talepler,yorumlar,onOnayla,onReddet,onEkleH,onGun
                           return (
                           <div key={hisse.id} style={{background:"#fdf8f2",border:"1px solid rgba(200,134,26,.15)",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                              <div>
+                              <div style={{flex:1,minWidth:0}}>
                                 <span style={{color:"#8b1a1a",fontWeight:700,fontSize:13}}>{i+1}. {hisse.ad}</span>
                                 <span style={{fontSize:11,color:"#8a5c30",marginLeft:8}}>Tel: {hisse.telefon}</span>
                               </div>
-                              <button onClick={()=>onSilHisse(h.id,hisse.id)} style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:16,padding:"0 2px",touchAction:"manipulation",flexShrink:0}}>Sil</button>
-                              <button onClick={()=>{
-                                const link = `${window.location.origin}${window.location.pathname}?degerlendirme=${hisse.id}`;
-                                const msg = `Sayin ${hisse.ad},
-
-Kurban hisseniz basariyla teslim edilmistir. Hayirli olsun!
-
-Hizmetimizi degerlendirmenizi rica ederiz:
-${link}
-
-Murat Yalvac Ogrenci Yurdu`;
-                                waGonder(hisse.telefon, msg);
-                              }} style={{background:"none",border:"1px solid rgba(245,158,11,.4)",borderRadius:6,color:"#b45309",cursor:"pointer",fontSize:11,padding:"2px 7px",touchAction:"manipulation",flexShrink:0,whiteSpace:"nowrap"}}>
-                                ⭐ Değerlendir
-                              </button>
+                              <div style={{display:"flex",gap:5,flexShrink:0,marginLeft:8}}>
+                                <button onClick={()=>{
+                                  const link = `${window.location.origin}${window.location.pathname}?degerlendirme=${hisse.id}`;
+                                  const msg = `Sayin ${hisse.ad},\n\nKurban hisseniz basariyla teslim edilmistir. Hayirli olsun!\n\nHizmetimizi degerlendirmenizi rica ederiz:\n${link}\n\nMurat Yalvac Ogrenci Yurdu`;
+                                  waGonder(hisse.telefon, msg);
+                                }} style={{background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.4)",borderRadius:6,color:"#b45309",cursor:"pointer",fontSize:11,padding:"3px 8px",touchAction:"manipulation",whiteSpace:"nowrap",fontFamily:FONT}}>
+                                  ⭐ Değerlendir
+                                </button>
+                                <button onClick={()=>onSilHisse(h.id,hisse.id)} style={{background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.3)",borderRadius:6,color:"#dc2626",cursor:"pointer",fontSize:11,padding:"3px 8px",touchAction:"manipulation",whiteSpace:"nowrap",fontFamily:FONT}}>
+                                  Sil
+                                </button>
+                              </div>
                             </div>
                             <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
                               {hisse.teslimat&&hisse.teslimat!=="belirtilmedi"&&(

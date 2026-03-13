@@ -1077,7 +1077,7 @@ function PublicPanel({hayvanlar,talepler,yorumlar,ayarlar,onTalep,onAdmin}) {
                       <button
                         onClick={()=>{
                           const msg = `BAĞIŞ KURBAN TALEBİ\n\nMerhaba, #${h.numara} nolu bağış kurbanı için sahip olmak istiyorum.\nBilgi alabilir miyim?\n\nKurban Takip: kurban-takip-2026.vercel.app`;
-                          waGonder(WA_YONETICI, msg);
+                          waGonder(ayarlar?.yoneticiTel||WA_YONETICI, msg);
                         }}
                         style={{flex:2,padding:"11px 8px",background:"#25d366",border:"none",borderRadius:9,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:700,fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                         <span>💬</span> WhatsApp
@@ -1101,13 +1101,13 @@ function PublicPanel({hayvanlar,talepler,yorumlar,ayarlar,onTalep,onAdmin}) {
                         <button
                           onClick={()=>{
                             const msg = `HİSSE TALEBİ\n\nMerhaba, #${h.numara} nolu hayvan için hisse almak istiyorum.\nHisse bedeli: ${new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(hT)}\nBoş hisse: ${efBos}\n\nBilgi alabilir miyim?`;
-                            waGonder(WA_YONETICI, msg);
+                            waGonder(ayarlar?.yoneticiTel||WA_YONETICI, msg);
                           }}
                           style={{flex:1,padding:"10px 8px",background:"#25d366",border:"none",borderRadius:9,color:"#fff",cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:"clamp(11px,3vw,13px)",touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                           <span>💬</span> WhatsApp
                         </button>
                         <button
-                          onClick={()=>{window.location.href=`tel:+${WA_YONETICI}`;}}
+                          onClick={()=>{window.location.href=`tel:+${ayarlar?.yoneticiTel||WA_YONETICI}`;}} 
                           style={{flex:1,padding:"10px 8px",background:"rgba(139,26,26,.08)",border:"1px solid rgba(139,26,26,.25)",borderRadius:9,color:"#8b1a1a",cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:"clamp(11px,3vw,13px)",touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                           <span>📞</span> Ara
                         </button>
